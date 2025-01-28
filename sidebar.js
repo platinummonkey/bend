@@ -76,14 +76,14 @@ async function initSidebar() {
                 id: groupId,
                 uuid: generateUUID(),
                 name: 'Default',
-                pinnedTabs: [],
+                spaceBookmarks: [],
                 temporaryTabs: allTabs.filter(tab => !tab.pinned).map(tab => tab.id)
             };
             
-            // Create bookmark folder for pinned tabs using UUID
+            // Create bookmark folder for space bookmarks using UUID
             await chrome.bookmarks.create({
                 parentId: spacesFolder.id,
-                title: defaultSpace.id
+                title: ""+defaultSpace.id
             });
             
             spaces = [defaultSpace];
@@ -97,13 +97,13 @@ async function initSidebar() {
             spaces = await Promise.all(tabGroups.map(async group => {
                 const tabs = await chrome.tabs.query({groupId: group.id});
                 console.log("processing group", group);
-                const pinnedTabs = result.spaces.find(s => s.id === group.id)?.pinnedTabs || [];
-                console.log("pinned tabs", pinnedTabs);
+                const spaceBookmarks = result.spaces.find(s => s.id == group.id)?.spaceBookmarks || [];
+                console.log("space bookmarks", spaceBookmarks);
                 const space = {
                     id: group.id,
                     uuid: generateUUID(),
                     name: group.title,
-                    pinnedTabs: pinnedTabs,
+                    spaceBookmarks: spaceBookmarks,
                     temporaryTabs: tabs.map(tab => tab.id)
                 };
 
@@ -243,8 +243,8 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                         if (space && tab) {
                             // Move tab from temporary to pinned in space data
                             space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
-                            if (!space.pinnedTabs.includes(tabId)) {
-                                space.pinnedTabs.push(tabId);
+                            if (!space.spaceBookmarks.includes(tabId)) {
+                                space.spaceBookmarks.push(tabId);
                             }
                             
                             // Add to bookmarks if URL doesn't exist
@@ -277,7 +277,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
 
 async function loadTabs(space, pinnedContainer, tempContainer) {
     console.log('Loading tabs for space:', space.id);
-    console.log('Pinned tabs in space:', space.pinnedTabs);
+    console.log('Space bookmarks in space:', space.spaceBookmarks);
     try {
         const tabs = await chrome.tabs.query({});
         const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
@@ -287,30 +287,30 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
             const spaceFolder = spaceFolders.find(f => f.title === ""+space.id);
             
             if (spaceFolder) {
-                // Load pinned tabs from bookmarks
-                const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                // Load space bookmarks from bookmarks
+                const bookmarks = await chrome.bookmarks.getChildren(""+spaceFolder.id);
                 
-                console.log('Loading active pinned tabs from bookmarks...', bookmarks);
-                // First, handle active pinned tabs
-                for (const tabId of space.pinnedTabs) {
+                console.log('Loading active space bookmarks from bookmarks...', bookmarks);
+                // First, handle active space bookmarks
+                for (const tabId of space.spaceBookmarks) {
                     const tab = tabs.find(t => t.id === tabId);
-                    console.log('Checking if active pinned tab exists:', tab);
+                    console.log('Checking if active space bookmark exists:', tab);
                     if (tab) {
                         // Only create tab element if bookmark exists for this URL
                         const existingBookmark = bookmarks.find(b => b.url === tab.url);
                         if (existingBookmark) {
-                            console.log('Creating UI element for active pinned tab:', tab.id, tab.title);
+                            console.log('Creating UI element for active space bookmark:', tab.id, tab.title);
                             const tabElement = createTabElement(tab, true);
                             pinnedContainer.appendChild(tabElement);
                         }
                     }
                 }
                 
-                console.log('Loading inactive pinned tabs from bookmarks...');
-                // Then, handle inactive pinned tabs from bookmarks
+                console.log('Loading inactive space bookmarks from bookmarks...');
+                // Then, handle inactive space bookmarks from bookmarks
                 for (const bookmark of bookmarks) {
                     // Only create element if there's no active tab with this URL
-                    const activeTab = tabs.find(t => t.url === bookmark.url && space.pinnedTabs.includes(t.id));
+                    const activeTab = tabs.find(t => t.url === bookmark.url && space.spaceBookmarks.includes(t.id));
                     if (!activeTab) {
                         const bookmarkTab = {
                             id: null,
@@ -319,7 +319,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             favIconUrl: null,
                             spaceName: space.name
                         };
-                        console.log('Creating UI element for inactive pinned tab from bookmark:', bookmark.title);
+                        console.log('Creating UI element for inactive space bookmark from bookmark:', bookmark.title);
                         const tabElement = createTabElement(bookmarkTab, true, true);
                         pinnedContainer.appendChild(tabElement);
                     }
@@ -330,7 +330,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
         // Load temporary tabs
         space.temporaryTabs.forEach(tabId => {
             console.log("checking", tabId);
-            const pinned = space.pinnedTabs.find(t => t == tabId);
+            const pinned = space.spaceBookmarks.find(t => t == tabId);
             console.log("pinned", pinned);
             const tab = tabs.find(t => t.id === tabId);
             if (tab && pinned == null) {
@@ -406,7 +406,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
             if (isPinned) {
                 const space = spaces.find(s => s.name === tab.spaceName);
                 if (space) {
-                    space.pinnedTabs.push(newTab.id);
+                    space.spaceBookmarks.push(newTab.id);
                     saveSpaces();
                 }
             }
@@ -471,7 +471,7 @@ async function createNewSpace() {
             id: groupId,
             uuid: generateUUID(),
             name: 'New Space',
-            pinnedTabs: [],
+            spaceBookmarks: [],
             temporaryTabs: [newTab.id]
         };
         
@@ -480,7 +480,7 @@ async function createNewSpace() {
         if (bookmarkFolders.length > 0) {
             await chrome.bookmarks.create({
                 parentId: bookmarkFolders[0].id,
-                title: space.id
+                title: ""+space.id
             });
         }
         
@@ -593,7 +593,7 @@ async function handleTabRemove(tabId) {
     
     // Remove tab from spaces
     spaces.forEach(space => {
-        space.pinnedTabs = space.pinnedTabs.filter(id => id !== tabId);
+        space.spaceBookmarks = space.spaceBookmarks.filter(id => id !== tabId);
         space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
     });
     
@@ -655,7 +655,7 @@ function handleTabActivated(activeInfo) {
     console.log('Tab activated:', activeInfo.tabId);
     // Find which space contains this tab
     const spaceWithTab = spaces.find(space => 
-        space.pinnedTabs.includes(activeInfo.tabId) || 
+        space.spaceBookmarks.includes(activeInfo.tabId) || 
         space.temporaryTabs.includes(activeInfo.tabId)
     );
 
@@ -675,7 +675,7 @@ function deleteSpace(spaceId) {
     const space = spaces.find(s => s.id === spaceId);
     if (space) {
         // Close all tabs in the space
-        [...space.pinnedTabs, ...space.temporaryTabs].forEach(tabId => {
+        [...space.spaceBookmarks, ...space.temporaryTabs].forEach(tabId => {
             chrome.tabs.remove(tabId);
         });
 
