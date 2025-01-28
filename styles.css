@@ -57,6 +57,38 @@ body {
     gap: 16px;
 }
 
+.pinned-favicons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pinned-favicon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.pinned-favicon:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.pinned-favicon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
 .spaces-list {
     flex-grow: 1;
     display: flex;

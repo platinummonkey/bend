@@ -38,14 +38,54 @@ async function updateBookmarkForTab(tab) {
 
 console.log("hi");
 
+// Function to update pinned favicons
+async function updatePinnedFavicons() {
+    const pinnedFavicons = document.getElementById('pinnedFavicons');
+    const pinnedTabs = await chrome.tabs.query({ pinned: true });
+
+    // Remove favicon elements for tabs that are no longer pinned
+    Array.from(pinnedFavicons.children).forEach(element => {
+        const tabId = element.dataset.tabId;
+        if (!pinnedTabs.some(tab => tab.id.toString() === tabId)) {
+            element.remove();
+        }
+    });
+
+    pinnedTabs.forEach(tab => {
+        // Check if favicon element already exists for this tab
+        const existingElement = pinnedFavicons.querySelector(`[data-tab-id="${tab.id}"]`);
+        if (!existingElement) {
+            const faviconElement = document.createElement('div');
+            faviconElement.className = 'pinned-favicon';
+            faviconElement.title = tab.title;
+            faviconElement.dataset.tabId = tab.id;
+
+            const img = document.createElement('img');
+            img.src = tab.favIconUrl || 'assets/default_icon.png';
+            img.alt = tab.title;
+
+            faviconElement.appendChild(img);
+            faviconElement.addEventListener('click', () => {
+                chrome.tabs.update(tab.id, { active: true });
+            });
+
+            pinnedFavicons.appendChild(faviconElement);
+        }
+    });
+}
+
 // Initialize the sidebar when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing sidebar...');
     initSidebar();
+    updatePinnedFavicons(); // Initial load of pinned favicons
 
     // Add Chrome tab event listeners
     chrome.tabs.onCreated.addListener(handleTabCreated);
-    chrome.tabs.onUpdated.addListener(handleTabUpdate);
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        handleTabUpdate(tabId, changeInfo, tab);
+        if (tab.pinned) updatePinnedFavicons(); // Update favicons when a tab is pinned/unpinned
+    });
     chrome.tabs.onRemoved.addListener(handleTabRemove);
     chrome.tabs.onMoved.addListener(handleTabMove);
     chrome.tabs.onActivated.addListener(handleTabActivated);
