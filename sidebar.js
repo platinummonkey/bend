@@ -212,7 +212,7 @@ function createTabElement(tab) {
     }
     
     const favicon = document.createElement('img');
-    favicon.src = tab.favIconUrl || 'default-favicon.png';
+    favicon.src = tab.favIconUrl || 'assets/default_icon.png';
     favicon.classList.add('tab-favicon');
     
     const title = document.createElement('span');
