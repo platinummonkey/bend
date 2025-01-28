@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc-Style Sidebar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sidebar-container">
+        <div class="spaces-list" id="spacesList">
+            <!-- Spaces will be dynamically added here -->
+        </div>
+        <button class="new-tab-btn" id="newTabBtn">
+            <span>+</span> New Tab
+        </button>
+        <div class="space-switcher" id="spaceSwitcher">
+            <!-- Space switcher buttons will be added here -->
+        </div>
+        <button class="add-space-btn" id="addSpaceBtn">
+            <span>+</span> New Space
+        </button>
+    </div>
+    <template id="spaceTemplate">
+        <div class="space">
+            <div class="space-header">
+                <input type="text" class="space-name" placeholder="Space Name">
+                <button class="space-options">⋮</button>
+            </div>
+            <div class="pinned-tabs">
+                <h3>Pinned</h3>
+                <div class="tabs-container" data-tab-type="pinned"></div>
+            </div>
+            <div class="temporary-tabs">
+                <div class="temp-header">
+                    <h3>Temporary</h3>
+                    <button class="clean-tabs-btn">Clean All</button>
+                </div>
+                <div class="tabs-container" data-tab-type="temporary"></div>
+            </div>
+        </div>
+    </template>
+    <script src="sidebar.js"></script>
+</body>
+</html>

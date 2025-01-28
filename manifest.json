@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Arc-Style Sidebar",
+  "version": "1.0",
+  "description": "A sidebar extension that replicates Arc browser's tab management system",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "sidePanel",
+    "storage",
+    "bookmarks"
+  ],
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
+  "web_accessible_resources": [{
+    "resources": ["sidebar.js"],
+    "matches": ["<all_urls>"]
+  }]
+}

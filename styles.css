@@ -1,0 +1,274 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffd4d4;
+    color: #333;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.spotlight-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.spotlight-container {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 12px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+}
+
+.spotlight-input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    outline: none;
+    color: #333;
+}
+
+.spotlight-input::placeholder {
+    color: #999;
+}
+
+.sidebar-container {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 16px;
+}
+
+.spaces-list {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.space {
+    /* background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px; */
+}
+
+.space-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.space-name {
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.space-name:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    outline: none;
+}
+
+.space-options {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.space-options:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.pinned-tabs,
+.temporary-tabs {
+    margin-top: 12px;
+}
+
+.temp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.clean-tabs-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.clean-tabs-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tabs-container {
+    min-height: 40px;
+    /* border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    margin-top: 8px; */
+}
+
+.add-space-btn {
+    background: none;
+    border: none;
+    color: #666;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.add-space-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.add-space-btn span {
+    font-size: 18px;
+}
+
+.new-tab-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #333;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 16px;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.new-tab-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.new-tab-btn span {
+    font-size: 20px;
+}
+
+.space-switcher {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.space-switcher button {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0 12px;
+    color: #333;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.space-switcher button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.space-switcher button.active {
+    background-color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    transition: background-color 0.2s ease;
+}
+
+.tab.active {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.tab:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.tab-favicon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.tab-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+.tab-item.dragging {
+    opacity: 0.5;
+}
+
+.tabs-container.drag-over {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.new-tab-input {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.url-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-size: inherit;
+    padding: 4px;
+}
