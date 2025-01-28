@@ -308,21 +308,26 @@ function handleTabCreated(tab) {
     if (activeSpaceId) {
         const space = spaces.find(s => s.id === activeSpaceId);
         if (space) {
-            // Add the new tab to the current space's temporary tabs
-            space.temporaryTabs.push(tab.id);
-            saveSpaces();
+            // First, add the tab to the space's tab group
+            chrome.tabs.group({ tabIds: tab.id, groupId: space.id }).then(() => {
+                // Add the new tab to the current space's temporary tabs
+                space.temporaryTabs.push(tab.id);
+                saveSpaces();
 
-            // Create and add the tab element to the temporary container
-            const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
-            if (spaceElement) {
-                const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
-                const tabElement = createTabElement(tab);
-                tempContainer.appendChild(tabElement);
+                // Create and add the tab element to the temporary container
+                const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
+                if (spaceElement) {
+                    const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
+                    const tabElement = createTabElement(tab);
+                    tempContainer.appendChild(tabElement);
 
-                // Update active state of all tabs
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tabElement.classList.add('active');
-            }
+                    // Update active state of all tabs
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tabElement.classList.add('active');
+                }
+            }).catch(error => {
+                console.error('Error grouping tab:', error);
+            });
         }
     }
 }
