@@ -268,15 +268,26 @@ function createNewTab() {
 async function createNewSpace() {
     console.log('Creating new space... Button clicked');
     try {
-        // Create a new tab group
-        const groupId = await chrome.tabs.group({});
-        await chrome.tabGroups.update(groupId, {title: 'New Space', color: 'grey'});
+        // First create a new tab
+        const newTab = await new Promise((resolve, reject) => {
+            chrome.tabs.create({ active: true }, (tab) => {
+                if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve(tab);
+                }
+            });
+        });
+
+        // Create a new tab group with the new tab
+        const groupId = await chrome.tabs.group({ tabIds: [newTab.id] });
+        await chrome.tabGroups.update(groupId, { title: 'New Space', color: 'grey' });
 
         const space = {
             id: groupId,
             name: 'New Space',
             pinnedTabs: [],
-            temporaryTabs: []
+            temporaryTabs: [newTab.id]
         };
         
         // Create bookmark folder for pinned tabs
