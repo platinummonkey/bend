@@ -9,6 +9,24 @@ const spaceTemplate = document.getElementById('spaceTemplate');
 let spaces = [];
 let activeSpaceId = null;
 
+// Helper function to update bookmark for a tab
+async function updateBookmarkForTab(tab) {
+    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+    if (bookmarkFolders.length > 0) {
+        const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+        for (const spaceFolder of spaceFolders) {
+            const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+            const bookmark = bookmarks.find(b => b.url === tab.url);
+            if (bookmark) {
+                await chrome.bookmarks.update(bookmark.id, {
+                    title: tab.title,
+                    url: tab.url
+                });
+            }
+        }
+    }
+}
+
 console.log("hi");
 
 // Initialize the sidebar when the DOM is loaded
@@ -178,7 +196,7 @@ function saveSpaces() {
     });
 }
 
-function setupDragAndDrop(pinnedContainer, tempContainer) {
+async function setupDragAndDrop(pinnedContainer, tempContainer) {
     console.log('Setting up drag and drop handlers...');
     [pinnedContainer, tempContainer].forEach(container => {
         container.addEventListener('dragover', e => {
@@ -186,6 +204,45 @@ function setupDragAndDrop(pinnedContainer, tempContainer) {
             const draggingElement = document.querySelector('.dragging');
             if (draggingElement) {
                 container.appendChild(draggingElement);
+                
+                // Handle tab being moved to pinned section
+                if (container.dataset.tabType === 'pinned' && draggingElement.dataset.tabId) {
+                    console.log("dragged");
+                    const tabId = parseInt(draggingElement.dataset.tabId);
+                    chrome.tabs.get(tabId, async (tab) => {
+                        const spaceId = container.closest('.space').dataset.spaceId;
+                        const space = spaces.find(s => s.id === parseInt(spaceId));
+                        
+                        if (space && tab) {
+                            // Move tab from temporary to pinned in space data
+                            space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
+                            if (!space.pinnedTabs.includes(tabId)) {
+                                space.pinnedTabs.push(tabId);
+                            }
+                            
+                            // Add to bookmarks if URL doesn't exist
+                            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                            if (bookmarkFolders.length > 0) {
+                                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                                const spaceFolder = spaceFolders.find(f => f.title === space.name);
+                                if (spaceFolder) {
+                                    // Check if bookmark with same URL exists
+                                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                    const existingBookmark = bookmarks.find(b => b.url === tab.url);
+                                    if (!existingBookmark) {
+                                        await chrome.bookmarks.create({
+                                            parentId: spaceFolder.id,
+                                            title: tab.title,
+                                            url: tab.url
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            saveSpaces();
+                        }
+                    });
+                }
             }
         });
     });
@@ -195,14 +252,45 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
     console.log('Loading tabs for space:', space.id);
     try {
         const tabs = await chrome.tabs.query({});
-        space.pinnedTabs.forEach(tabId => {
-            const tab = tabs.find(t => t.id === tabId);
-            if (tab) {
-                const tabElement = createTabElement(tab);
-                pinnedContainer.appendChild(tabElement);
-            }
-        });
+        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
         
+        if (bookmarkFolders.length > 0) {
+            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+            const spaceFolder = spaceFolders.find(f => f.title === space.name);
+            
+            if (spaceFolder) {
+                // Load pinned tabs from bookmarks
+                const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                
+                // First, handle active pinned tabs
+                space.pinnedTabs.forEach(tabId => {
+                    const tab = tabs.find(t => t.id === tabId);
+                    if (tab) {
+                        const tabElement = createTabElement(tab, true);
+                        pinnedContainer.appendChild(tabElement);
+                    }
+                });
+                
+                // Then, handle inactive pinned tabs from bookmarks
+                bookmarks.forEach(bookmark => {
+                    // Only create element if there's no active tab with this URL
+                    const activeTab = tabs.find(t => t.url === bookmark.url && space.pinnedTabs.includes(t.id));
+                    if (!activeTab) {
+                        const bookmarkTab = {
+                            id: null,
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            favIconUrl: null,
+                            spaceName: space.name
+                        };
+                        const tabElement = createTabElement(bookmarkTab, true, true);
+                        pinnedContainer.appendChild(tabElement);
+                    }
+                });
+            }
+        }
+        
+        // Load temporary tabs
         space.temporaryTabs.forEach(tabId => {
             const tab = tabs.find(t => t.id === tabId);
             if (tab) {
@@ -215,16 +303,21 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
     }
 }
 
-function createTabElement(tab) {
+function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
     console.log('Creating tab element:', tab.id);
     const tabElement = document.createElement('div');
     tabElement.classList.add('tab');
-    tabElement.dataset.tabId = tab.id;
-    tabElement.draggable = true;
-    
-    // Add active class if this is the active tab
-    if (tab.active) {
-        tabElement.classList.add('active');
+    if (!isBookmarkOnly) {
+        tabElement.dataset.tabId = tab.id;
+        tabElement.draggable = true;
+        
+        // Add active class if this is the active tab
+        if (tab.active) {
+            tabElement.classList.add('active');
+        }
+    } else {
+        tabElement.classList.add('inactive');
+        tabElement.dataset.url = tab.url;
     }
     
     const favicon = document.createElement('img');
@@ -235,34 +328,66 @@ function createTabElement(tab) {
     title.textContent = tab.title;
     title.classList.add('tab-title');
     
-    const closeButton = document.createElement('button');
-    closeButton.classList.add('tab-close');
-    closeButton.innerHTML = '×';
-    closeButton.addEventListener('click', (e) => {
+    const actionButton = document.createElement('button');
+    actionButton.classList.add(isBookmarkOnly ? 'tab-remove' : 'tab-close');
+    actionButton.innerHTML = isBookmarkOnly ? '-' : '×';
+    actionButton.addEventListener('click', async (e) => {
         e.stopPropagation(); // Prevent tab activation when closing
-        chrome.tabs.remove(tab.id);
+        
+        if (isBookmarkOnly) {
+            // Remove from bookmarks
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            if (bookmarkFolders.length > 0) {
+                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                const spaceFolder = spaceFolders.find(f => f.title === tab.spaceName);
+                if (spaceFolder) {
+                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                    const bookmark = bookmarks.find(b => b.url === tab.url);
+                    if (bookmark) {
+                        await chrome.bookmarks.remove(bookmark.id);
+                        tabElement.remove();
+                    }
+                }
+            }
+        } else {
+            chrome.tabs.remove(tab.id);
+        }
     });
     
     tabElement.appendChild(favicon);
     tabElement.appendChild(title);
-    tabElement.appendChild(closeButton);
+    tabElement.appendChild(actionButton);
     
-    // Add click handler to switch to tab
-    tabElement.addEventListener('click', () => {
-        // Remove active class from all tabs
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        // Add active class to clicked tab
-        tabElement.classList.add('active');
-        chrome.tabs.update(tab.id, { active: true });
+    // Add click handler
+    tabElement.addEventListener('click', async () => {
+        if (isBookmarkOnly) {
+            // Create new tab with bookmark URL
+            const newTab = await chrome.tabs.create({ url: tab.url, active: true });
+            if (isPinned) {
+                const space = spaces.find(s => s.name === tab.spaceName);
+                if (space) {
+                    space.pinnedTabs.push(newTab.id);
+                    saveSpaces();
+                }
+            }
+        } else {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            tabElement.classList.add('active');
+            chrome.tabs.update(tab.id, { active: true });
+        }
     });
     
-    tabElement.addEventListener('dragstart', () => {
-        tabElement.classList.add('dragging');
-    });
-    
-    tabElement.addEventListener('dragend', () => {
-        tabElement.classList.remove('dragging');
-    });
+    if (!isBookmarkOnly) {
+        tabElement.addEventListener('dragstart', () => {
+            tabElement.classList.add('dragging');
+        });
+        
+        tabElement.addEventListener('dragend', () => {
+            tabElement.classList.remove('dragging');
+        });
+    }
     
     return tabElement;
 }
@@ -281,8 +406,11 @@ function createNewTab() {
     });
 }
 
+let isCreatingSpace = false;
+
 async function createNewSpace() {
     console.log('Creating new space... Button clicked');
+    isCreatingSpace = true;
     try {
         // First create a new tab
         const newTab = await new Promise((resolve, reject) => {
@@ -324,6 +452,8 @@ async function createNewSpace() {
         saveSpaces();
     } catch (error) {
         console.error('Error creating new space:', error);
+    } finally {
+        isCreatingSpace = false;
     }
 }
 
@@ -340,12 +470,22 @@ function cleanTemporaryTabs(spaceId) {
 }
 
 function handleTabCreated(tab) {
+    if (isCreatingSpace) {
+        console.log('Skipping tab creation handler - space is being created');
+        return;
+    }
     console.log('Tab created:', tab.id);
-    if (activeSpaceId) {
-        const space = spaces.find(s => s.id === activeSpaceId);
-        if (space) {
-            // First, add the tab to the space's tab group
-            chrome.tabs.group({ tabIds: tab.id, groupId: space.id }).then(() => {
+    // Always ensure we have the current activeSpaceId
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        try {
+            // Get the current active tab's group ID
+            // const currentGroupId = await chrome.tabs.group({ tabIds: tab.id });
+            const space = spaces.find(s => s.id === activeSpaceId);
+            
+            if (space) {
+                // Move the tab to the active space's group
+                await chrome.tabs.group({ tabIds: tab.id, groupId: space.id });
+                
                 // Add the new tab to the current space's temporary tabs
                 space.temporaryTabs.push(tab.id);
                 saveSpaces();
@@ -361,23 +501,34 @@ function handleTabCreated(tab) {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     tabElement.classList.add('active');
                 }
-            }).catch(error => {
-                console.error('Error grouping tab:', error);
-            });
+            }
+        } catch (error) {
+            console.error('Error handling new tab:', error);
         }
-    }
+    });
 }
 
+
 function handleTabUpdate(tabId, changeInfo, tab) {
-    console.log('Tab updated:', tabId, changeInfo);
+    console.log('Tab updated:', tabId, changeInfo, spaces);
     // Update tab element if it exists
     const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
     if (tabElement) {
         if (changeInfo.title) {
             tabElement.querySelector('.tab-title').textContent = changeInfo.title;
+            // Update bookmark title if this is a pinned tab
+            if (tabElement.closest('[data-tab-type="pinned"]')) {
+                updateBookmarkForTab(tab);
+            }
         }
         if (changeInfo.favIconUrl) {
-            tabElement.querySelector('.tab-favicon').src = changeInfo.favIconUrl || 'default-favicon.png';
+            tabElement.querySelector('.tab-favicon').src = changeInfo.favIconUrl || 'assets/default_icon.png';
+        }
+        if (changeInfo.url) {
+            // Update bookmark URL if this is a pinned tab
+            if (tabElement.closest('[data-tab-type="pinned"]')) {
+                updateBookmarkForTab(tab);
+            }
         }
         // Update active state when tab's active state changes
         if (changeInfo.active !== undefined) {
@@ -391,19 +542,57 @@ function handleTabUpdate(tabId, changeInfo, tab) {
     }
 }
 
-function handleTabRemove(tabId) {
+async function handleTabRemove(tabId) {
     console.log('Tab removed:', tabId);
+    // Get tab element before removing it
+    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+    if (!tabElement) return;
+    
+    const isPinned = tabElement.closest('[data-tab-type="pinned"]');
+    
     // Remove tab from spaces
     spaces.forEach(space => {
         space.pinnedTabs = space.pinnedTabs.filter(id => id !== tabId);
         space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
     });
+    
+    // If it was a pinned tab, convert it to an inactive bookmark tab
+    if (isPinned) {
+        const space = spaces.find(s => s.id === parseInt(tabElement.closest('.space').dataset.spaceId));
+        if (space) {
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            if (bookmarkFolders.length > 0) {
+                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                const spaceFolder = spaceFolders.find(f => f.title === space.name);
+                if (spaceFolder) {
+                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                    const bookmark = bookmarks.find(b => b.url === tabElement.dataset.url);
+                    if (bookmark) {
+                        // Create an inactive bookmark tab element
+                        const bookmarkTab = {
+                            id: null,
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            favIconUrl: null,
+                            spaceName: space.name
+                        };
+                        const inactiveTabElement = createTabElement(bookmarkTab, true, true);
+                        tabElement.replaceWith(inactiveTabElement);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    // If not a pinned tab or bookmark not found, remove the element
+    tabElement?.remove();
     saveSpaces();
     
     // Remove tab element from DOM
-    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-    if (tabElement) {
-        tabElement.remove();
+    const newTabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+    if (newTabElement) {
+        newTabElement.remove();
     }
 }
 
