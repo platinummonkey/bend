@@ -220,37 +220,62 @@ body {
 .tab {
     display: flex;
     align-items: center;
-    gap: 8px;
     padding: 8px;
     margin: 4px 0;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    max-width: 100%;
-    overflow: hidden;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s;
+}
+
+.tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .tab.active {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.tab:not(.active):hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .tab-favicon {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
 }
 
 .tab-title {
+    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
 }
 
+.tab-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    margin-left: 8px;
+    opacity: 0;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.tab:hover .tab-close {
+    opacity: 1;
+}
+
+.tab-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tab-close:active {
+    background-color: rgba(0, 0, 0, 0.15);
+}
 .tab-item.dragging {
     opacity: 0.5;
 }

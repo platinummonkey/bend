@@ -219,8 +219,17 @@ function createTabElement(tab) {
     title.textContent = tab.title;
     title.classList.add('tab-title');
     
+    const closeButton = document.createElement('button');
+    closeButton.classList.add('tab-close');
+    closeButton.innerHTML = '×';
+    closeButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent tab activation when closing
+        chrome.tabs.remove(tab.id);
+    });
+    
     tabElement.appendChild(favicon);
     tabElement.appendChild(title);
+    tabElement.appendChild(closeButton);
     
     // Add click handler to switch to tab
     tabElement.addEventListener('click', () => {
