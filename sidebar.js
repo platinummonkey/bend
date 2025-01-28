@@ -423,10 +423,21 @@ function handleTabMove(tabId, moveInfo) {
 
 function handleTabActivated(activeInfo) {
     console.log('Tab activated:', activeInfo.tabId);
-    // Update active state of all tabs
-    document.querySelectorAll('.tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.tabId === String(activeInfo.tabId));
-    });
+    // Find which space contains this tab
+    const spaceWithTab = spaces.find(space => 
+        space.pinnedTabs.includes(activeInfo.tabId) || 
+        space.temporaryTabs.includes(activeInfo.tabId)
+    );
+
+    if (spaceWithTab && spaceWithTab.id !== activeSpaceId) {
+        // Switch to the space containing the tab
+        setActiveSpace(spaceWithTab.id);
+    } else {
+        // Just update the active state of tabs in the current space
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.tabId === String(activeInfo.tabId));
+        });
+    }
 }
 
 function deleteSpace(spaceId) {
