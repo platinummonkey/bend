@@ -150,6 +150,22 @@ function setActiveSpace(spaceId) {
         spaceElement.classList.toggle('active', isActive);
         spaceElement.style.display = isActive ? 'block' : 'none';
     });
+
+    // Get the currently active tab from Chrome
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs.length > 0) {
+            const activeTab = tabs[0];
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                // Add active class only to the currently active tab in the current space
+                if (t.dataset.tabId === String(activeTab.id) && 
+                    t.closest('.space').dataset.spaceId === String(spaceId)) {
+                    t.classList.add('active');
+                }
+            });
+        }
+    });
     
     // Update space switcher
     updateSpaceSwitcher();
