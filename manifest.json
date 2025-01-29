@@ -13,6 +13,10 @@
   "side_panel": {
     "default_path": "sidebar.html"
   },
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  },
   "web_accessible_resources": [{
     "resources": ["sidebar.js"],
     "matches": ["<all_urls>"]
