@@ -10,6 +10,7 @@ body {
     color: #333;
     height: 100vh;
     overflow-y: auto;
+    font-weight: 500;
 }
 
 .spotlight-dialog {
@@ -61,31 +62,34 @@ body {
     display: flex;
     flex-flow: row wrap;
     gap: 12px;
-    padding: 8px;
+    /* padding: 8px; */
     border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.1);
+    /* background-color: rgba(255, 255, 255, 0.1); */
+    gap: 8px 4px;
+    justify-content: space-between;
 }
 
 .pinned-favicon {
     width: 32px;
     height: 48px;
-    flex-basis: 30%;
+    flex-basis: 32%;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-.pinned-favicon.active {
+.pinned-favicon.active, .pinned-favicon.active:hover {
     background-color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .pinned-favicon:hover {
-    transform: scale(1.1);
+    /* transform: scale(1.1); */
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .pinned-favicon img {
@@ -120,7 +124,7 @@ body {
     font-size: 16px;
     font-weight: 600;
     color: #333;
-    padding: 4px;
+    padding: 4px 0;
     border-radius: 4px;
 }
 
