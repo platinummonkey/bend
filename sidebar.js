@@ -179,25 +179,25 @@ async function initSidebar() {
 
     // Add event listeners for buttons
     addSpaceBtn.addEventListener('click', () => {
-    const inputContainer = document.getElementById('addSpaceInputContainer');
-    const spaceSwitcher = document.getElementById('spaceSwitcher');
-    const spaceNameInput = document.getElementById('newSpaceName');
-    const isInputVisible = inputContainer.classList.contains('visible');
-    
-    // Toggle visibility classes
-    inputContainer.classList.toggle('visible');
-    addSpaceBtn.classList.toggle('active');
-    
-    // Toggle space switcher visibility
-    if (isInputVisible) {
-        spaceSwitcher.style.opacity = '1';
-        spaceSwitcher.style.visibility = 'visible';
-    } else {
-        spaceNameInput.value = '';
-        spaceSwitcher.style.opacity = '0';
-        spaceSwitcher.style.visibility = 'hidden';
-    }
-});
+        const inputContainer = document.getElementById('addSpaceInputContainer');
+        const spaceSwitcher = document.getElementById('spaceSwitcher');
+        const spaceNameInput = document.getElementById('newSpaceName');
+        const isInputVisible = inputContainer.classList.contains('visible');
+        
+        // Toggle visibility classes
+        inputContainer.classList.toggle('visible');
+        addSpaceBtn.classList.toggle('active');
+        
+        // Toggle space switcher visibility
+        if (isInputVisible) {
+            spaceSwitcher.style.opacity = '1';
+            spaceSwitcher.style.visibility = 'visible';
+        } else {
+            spaceNameInput.value = '';
+            spaceSwitcher.style.opacity = '0';
+            spaceSwitcher.style.visibility = 'hidden';
+        }
+    });
     document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
     newTabBtn.addEventListener('click', createNewTab);
 }
