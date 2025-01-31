@@ -405,7 +405,7 @@ body {
 
 #newSpaceName {
     flex: 1;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.6);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -416,7 +416,7 @@ body {
 }
 
 #newSpaceName:focus {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 1);
 }
 
 #newSpaceName::placeholder {
@@ -424,7 +424,7 @@ body {
 }
 
 #createSpaceBtn {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.8);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -435,7 +435,7 @@ body {
 }
 
 #createSpaceBtn:hover:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 1);
 }
 
 #createSpaceBtn:disabled {

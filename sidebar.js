@@ -844,6 +844,28 @@ function handleTabUpdate(tabId, changeInfo, tab) {
         return;
     }
     console.log('Tab updated:', tabId, changeInfo, spaces);
+
+    // Handle tab pinning state changes
+    if (changeInfo.pinned !== undefined) {
+        const space = spaces.find(s => s.temporaryTabs.includes(tabId));
+        if (space) {
+            // Remove from temporary tabs if pinned
+            if (changeInfo.pinned) {
+                space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
+                saveSpaces();
+
+                // Remove the tab element from temporary section
+                const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+                if (tabElement) {
+                    tabElement.remove();
+                }
+
+                // Update pinned favicons
+                updatePinnedFavicons();
+            }
+        }
+    }
+
     // Update tab element if it exists
     const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
     if (tabElement) {
