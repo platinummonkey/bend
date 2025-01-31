@@ -70,6 +70,10 @@ async function updatePinnedFavicons() {
 
             faviconElement.appendChild(img);
             faviconElement.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                faviconElement.classList.add('active');
                 chrome.tabs.update(tab.id, { active: true });
             });
 
@@ -571,6 +575,10 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
 
     // Add click handler
     tabElement.addEventListener('click', async () => {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+
         if (isBookmarkOnly) {
             console.log('Opening bookmark:', tab.url);
             isOpeningBookmark = true;
@@ -603,8 +611,6 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
             //     }
             // }
         } else {
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             // Add active class to clicked tab
             tabElement.classList.add('active');
             chrome.tabs.update(tab.id, { active: true });
@@ -670,10 +676,17 @@ async function createNewSpace() {
         // Create bookmark folder for pinned tabs using UUID
         const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
         if (bookmarkFolders.length > 0) {
-            await chrome.bookmarks.create({
-                parentId: bookmarkFolders[0].id,
-                title: space.name
-            });
+            // Check if bookmark folder with this space name already exists
+            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+            const spaceFolder = spaceFolders.find(f => f.title === space.name);
+
+            if (!spaceFolder) {
+                // Create a new bookmark folder for this space
+                await chrome.bookmarks.create({
+                    parentId: bookmarkFolders[0].id,
+                    title: space.name
+                });
+            }
         }
 
         spaces.push(space);
@@ -739,8 +752,13 @@ function handleTabCreated(tab) {
 
                     // Update active state of all tabs
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+
                     tabElement.classList.add('active');
                 }
+
+                // switch to the new tab
+                await chrome.tabs.update(tab.id, { active: true })
             }
         } catch (error) {
             console.error('Error handling new tab:', error);
@@ -778,6 +796,8 @@ function handleTabUpdate(tabId, changeInfo, tab) {
             if (changeInfo.active) {
                 // Remove active class from all tabs
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+
                 // Add active class to this tab
                 tabElement.classList.add('active');
             }

@@ -79,9 +79,13 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
+.pinned-favicon.active {
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .pinned-favicon:hover {
     transform: scale(1.1);
-    background-color: rgba(255, 255, 255, 0.3);
 }
 
 .pinned-favicon img {
