@@ -178,7 +178,27 @@ async function initSidebar() {
     }
 
     // Add event listeners for buttons
-    addSpaceBtn.addEventListener('click', createNewSpace);
+    addSpaceBtn.addEventListener('click', () => {
+    const inputContainer = document.getElementById('addSpaceInputContainer');
+    const spaceSwitcher = document.getElementById('spaceSwitcher');
+    const spaceNameInput = document.getElementById('newSpaceName');
+    const isInputVisible = inputContainer.classList.contains('visible');
+    
+    // Toggle visibility classes
+    inputContainer.classList.toggle('visible');
+    addSpaceBtn.classList.toggle('active');
+    
+    // Toggle space switcher visibility
+    if (isInputVisible) {
+        spaceSwitcher.style.opacity = '1';
+        spaceSwitcher.style.visibility = 'visible';
+    } else {
+        spaceNameInput.value = '';
+        spaceSwitcher.style.opacity = '0';
+        spaceSwitcher.style.visibility = 'hidden';
+    }
+});
+    document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
     newTabBtn.addEventListener('click', createNewTab);
 }
 
@@ -646,10 +666,52 @@ function createNewTab(callback = () => {}) {
     });
 }
 
+function showSpaceNameInput() {
+    const addSpaceBtn = document.getElementById('addSpaceBtn');
+    const addSpaceInputContainer = document.getElementById('addSpaceInputContainer');
+
+    addSpaceBtn.classList.toggle('active');
+    addSpaceInputContainer.classList.toggle('visible');
+    const errorPopup = document.createElement('div');
+    errorPopup.className = 'error-popup';
+    errorPopup.textContent = 'A space with this name already exists';
+    const inputContainer = document.getElementById('addSpaceInputContainer');
+    inputContainer.appendChild(errorPopup);
+    
+    // Remove the error message after 3 seconds
+    setTimeout(() => {
+        errorPopup.remove();
+    }, 3000);
+    return;
+}
+
+// Add input validation for new space name
+document.getElementById('newSpaceName').addEventListener('input', (e) => {
+    const createSpaceBtn = document.getElementById('createSpaceBtn');
+    createSpaceBtn.disabled = !e.target.value.trim();
+});
+
 async function createNewSpace() {
     console.log('Creating new space... Button clicked');
     isCreatingSpace = true;
     try {
+        const spaceNameInput = document.getElementById('newSpaceName');
+        const spaceName = spaceNameInput.value.trim();
+
+        if (!spaceName || spaces.some(space => space.name.toLowerCase() === spaceName.toLowerCase())) {
+            const errorPopup = document.createElement('div');
+            errorPopup.className = 'error-popup';
+            errorPopup.textContent = 'A space with this name already exists';
+            const inputContainer = document.getElementById('addSpaceInputContainer');
+            inputContainer.appendChild(errorPopup);
+            
+            // Remove the error message after 3 seconds
+            setTimeout(() => {
+                errorPopup.remove();
+            }, 3000);
+            return;
+        }
+
         // First create a new tab
         const newTab = await new Promise((resolve, reject) => {
             chrome.tabs.create({ active: true }, (tab) => {
@@ -663,12 +725,12 @@ async function createNewSpace() {
 
         // Create a new tab group with the new tab
         const groupId = await chrome.tabs.group({ tabIds: [newTab.id] });
-        await chrome.tabGroups.update(groupId, { title: 'New Space', color: 'grey' });
+        await chrome.tabGroups.update(groupId, { title: spaceName, color: 'grey' });
 
         const space = {
             id: groupId,
             uuid: generateUUID(),
-            name: 'New Space',
+            name: spaceName,
             spaceBookmarks: [],
             temporaryTabs: [newTab.id]
         };
@@ -696,10 +758,20 @@ async function createNewSpace() {
         updateSpaceSwitcher();
         setActiveSpace(space.id);
         saveSpaces();
+
+        isCreatingSpace = false;
+        // Reset the space creation UI and show space switcher
+        const addSpaceBtn = document.getElementById('addSpaceBtn');
+        const inputContainer = document.getElementById('addSpaceInputContainer');
+        const spaceSwitcher = document.getElementById('spaceSwitcher');
+        addSpaceBtn.classList.remove('active');
+        inputContainer.classList.remove('visible');
+        spaceSwitcher.style.opacity = '1';
+        spaceSwitcher.style.visibility = 'visible';
     } catch (error) {
         console.error('Error creating new space:', error);
     } finally {
-        isCreatingSpace = false;
+
     }
 }
 

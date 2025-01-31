@@ -17,12 +17,18 @@
         <button class="new-tab-btn" id="newTabBtn">
             <span>+</span> New Tab
         </button>
-        <div class="space-switcher" id="spaceSwitcher">
-            <!-- Space switcher buttons will be added here -->
+        <div class="space-switcher-container">
+            <div class="space-switcher" id="spaceSwitcher">
+                <!-- Space switcher buttons will be added here -->
+            </div>
+            <button class="add-space-toggle" id="addSpaceBtn">
+                <span>+</span>
+            </button>
+            <div class="add-space-input-container" id="addSpaceInputContainer">
+                <input type="text" id="newSpaceName" placeholder="Enter space name">
+                <button id="createSpaceBtn" disabled>Create</button>
+            </div>
         </div>
-        <button class="add-space-btn" id="addSpaceBtn">
-            <span>+</span> New Space
-        </button>
     </div>
     <template id="spaceTemplate">
         <div class="space">
