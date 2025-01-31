@@ -225,12 +225,21 @@ body {
 .space-switcher {
     display: flex;
     gap: 8px;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 8px 0;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 }
 
+.space-switcher::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+ 
 .space-switcher button {
     min-width: 32px;
+    max-width: none;
+    width: auto;
     height: 32px;
     border-radius: 16px;
     border: none;
@@ -243,6 +252,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex: none;
 }
 
 .space-switcher button:hover {
