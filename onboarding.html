@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Arc-Style Sidebar</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --text-color: #333;
+            --bg-color: #f5f7fa;
+            --section-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .feature {
+            background: var(--section-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .screenshot-placeholder {
+            background: #eee;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            color: #666;
+            margin: 1rem 0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+        }
+
+        .tip {
+            background: #e1f5fe;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Welcome to Arc-Style Sidebar</h1>
+            <p>A powerful tab management system inspired by the Arc browser</p>
+        </header>
+
+        <div class="features">
+            <div class="feature">
+                <h2>Spaces</h2>
+                <p>Organize your tabs into dedicated workspaces. Each space is like a separate working environment for different projects or tasks.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing multiple spaces in the sidebar with different colored tab groups -->
+                    Screenshot needed: Show the spaces list in sidebar with multiple spaces and how tabs are organized within them
+                </div>
+                <div class="tip">Pro tip: Use spaces to separate work, personal, and project-specific tabs!</div>
+            </div>
+
+            <div class="feature">
+                <h2>Pinned Tabs (Favorites)</h2>
+                <p>Keep your most important tabs easily accessible at the top of each space. Pinned tabs stay persistent even when you close them.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing pinned tabs section with favicons and titles -->
+                    Screenshot needed: Display the pinned tabs section with example of frequently used websites pinned
+                </div>
+                <div class="tip">Pro tip: Pin tabs you use frequently to keep them always within reach!</div>
+            </div>
+
+            <div class="feature">
+                <h2>Bookmarks</h2>
+                <p>Save important pages as bookmarks within each space. Bookmarks appear as pinned tabs and persist across browser sessions.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing how bookmarks appear in the pinned section -->
+                    Screenshot needed: Show how bookmarks are displayed in the pinned section and how they differ from regular tabs
+                </div>
+                <div class="tip">Pro tip: Use bookmarks to save important resources for each project space!</div>
+            </div>
+
+            <div class="feature">
+                <h2>Tab Organization</h2>
+                <p>Temporary tabs are automatically organized in the "Today" section. Keep your workspace clean by managing tabs effectively.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing the temporary tabs section with the clean-up feature -->
+                    Screenshot needed: Display the temporary tabs section with the "Clean All" button and tab organization
+                </div>
+                <div class="tip">Pro tip: Use the "Clean All" feature to quickly remove all temporary tabs when you're done!</div>
+            </div>
+
+            <div class="feature">
+                <h2>Folders</h2>
+                <p>Create folders within spaces to further organize your pinned tabs and bookmarks into logical groups.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing folder organization in the pinned section -->
+                    Screenshot needed: Show how folders can be created and used to organize pinned tabs
+                </div>
+                <div class="tip">Pro tip: Use folders to group related bookmarks within each space!</div>
+            </div>
+
+            <div class="feature">
+                <h2>Quick Access</h2>
+                <p>Access the sidebar quickly using the extension icon in your browser toolbar. Switch between spaces and manage tabs efficiently.</p>
+                <div class="screenshot-placeholder">
+                    <!-- Add screenshot showing how to access the sidebar using the extension icon -->
+                    Screenshot needed: Display the extension icon in the toolbar and the sidebar opening animation
+                </div>
+                <div class="tip">Pro tip: Use keyboard shortcuts for even faster access to your spaces!</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

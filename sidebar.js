@@ -190,7 +190,7 @@ async function initSidebar() {
             spaces = await Promise.all(tabGroups.map(async group => {
                 const tabs = await chrome.tabs.query({groupId: group.id});
                 console.log("processing group", group);
-                const spaceBookmarks = result.spaces.find(s => s.name == group.title)?.spaceBookmarks || [];
+                const spaceBookmarks = result.spaces?.find(s => s.name == group.title)?.spaceBookmarks || [];
                 console.log("space bookmarks", spaceBookmarks);
                 const space = {
                     id: group.id,
