@@ -34,11 +34,27 @@
         <div class="space">
             <div class="space-header">
                 <input type="text" class="space-name" placeholder="Space Name">
-                <button class="space-options">⋮</button>
+                <div class="space-options-container">
+                    <button class="space-options">⋮</button>
+                    <div class="space-options-dropdown">
+                        <button class="new-folder-btn">New Folder</button>
+                        <button class="delete-space-btn">Delete Space</button>
+                    </div>
+                </div>
             </div>
             <div class="pinned-tabs">
                 <h3>Pinned</h3>
-                <div class="tabs-container" data-tab-type="pinned"></div>
+                <div class="tabs-container" data-tab-type="pinned">
+                    <template id="folderTemplate">
+                        <div class="folder">
+                            <div class="folder-header">
+                                <input type="text" class="folder-name" placeholder="Untitled">
+                                <button class="folder-toggle">▼</button>
+                            </div>
+                            <div class="folder-content"></div>
+                        </div>
+                    </template>
+                </div>
             </div>
             <div class="temporary-tabs">
                 <div class="temp-header">

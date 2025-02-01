@@ -214,7 +214,6 @@ function createSpaceElement(space) {
     const nameInput = spaceElement.querySelector('.space-name');
     nameInput.value = space.name;
     nameInput.addEventListener('change', async () => {
-
         // Update bookmark folder name
         const bookmarkFolders =  await chrome.bookmarks.search({title: 'Arc Spaces'});
         const oldName = space.name;
@@ -255,8 +254,14 @@ function createSpaceElement(space) {
     cleanBtn.addEventListener('click', () => cleanTemporaryTabs(space.id));
 
     // Set up options menu
-    const optionsBtn = spaceElement.querySelector('.space-options');
-    optionsBtn.addEventListener('click', () => {
+    const newFolderBtn = spaceElement.querySelector('.new-folder-btn');
+    const deleteSpaceBtn = spaceElement.querySelector('.delete-space-btn');
+
+    newFolderBtn.addEventListener('click', () => {
+        createNewFolder(spaceContainer);
+    });
+
+    deleteSpaceBtn.addEventListener('click', () => {
         if (confirm('Delete this space and close all its tabs?')) {
             deleteSpace(space.id);
         }
@@ -279,6 +284,21 @@ function updateSpaceSwitcher() {
         button.addEventListener('click', () => setActiveSpace(space.id));
         spaceSwitcher.appendChild(button);
     });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.tab:not(.dragging), .folder:not(.dragging)')]
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect()
+        const offset = y - box.top - box.height / 2
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child }
+        } else {
+            return closest
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element
 }
 
 function setActiveSpace(spaceId) {
@@ -326,11 +346,20 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
             e.preventDefault();
             const draggingElement = document.querySelector('.dragging');
             if (draggingElement) {
-                container.appendChild(draggingElement);
+                const targetFolder = e.target.closest('.folder-content');
+                const targetContainer = targetFolder || container;
+                
+                // Get the element we're dragging over
+                const afterElement = getDragAfterElement(targetContainer, e.clientY);
+                if (afterElement) {
+                    targetContainer.insertBefore(draggingElement, afterElement);
+                } else {
+                    targetContainer.appendChild(draggingElement);
+                }
 
-                // Handle tab being moved to pinned section
+                // Handle tab being moved to pinned section or folder
                 if (container.dataset.tabType === 'pinned' && draggingElement.dataset.tabId) {
-                    console.log("dragged");
+                    console.log("Tab dragged to pinned section or folder");
                     const tabId = parseInt(draggingElement.dataset.tabId);
                     chrome.tabs.get(tabId, async (tab) => {
                         const spaceId = container.closest('.space').dataset.spaceId;
@@ -343,22 +372,61 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                 space.spaceBookmarks.push(tabId);
                             }
 
+                            // Determine the target folder or container
+                            const targetFolderContent = draggingElement.closest('.folder-content');
+                            const targetFolder = targetFolderContent ? targetFolderContent.closest('.folder') : null;
+
                             // Add to bookmarks if URL doesn't exist
                             const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
                             if (bookmarkFolders.length > 0) {
                                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                                 const spaceFolder = spaceFolders.find(f => f.title == space.name);
                                 if (spaceFolder) {
-                                    // Check if bookmark with same URL exists
-                                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
-                                    const existingBookmark = bookmarks.find(b => b.url === tab.url);
-                                    if (!existingBookmark) {
-                                        await chrome.bookmarks.create({
-                                            parentId: spaceFolder.id,
-                                            title: tab.title,
-                                            url: tab.url
-                                        });
+                                    let parentId = spaceFolder.id;
+                                    if (targetFolder) {
+                                        const folderElement = targetFolder.closest('.folder');
+                                        const folderName = folderElement.querySelector('.folder-name').value;
+                                        const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                        let folder = existingFolders.find(f => f.title === folderName);
+                                        if (!folder) {
+                                            folder = await chrome.bookmarks.create({
+                                                parentId: spaceFolder.id,
+                                                title: folderName
+                                            });
+                                        }
+                                        parentId = folder.id;
+                                        
+                                        // Check if bookmark already exists in the target folder
+                                        const existingBookmarks = await chrome.bookmarks.getChildren(parentId);
+                                        if (existingBookmarks.some(b => b.url === tab.url)) {
+                                            console.log('Bookmark already exists in folder:', folderName);
+                                            return;
+                                        }
                                     }
+
+                                    // Find and remove the bookmark from its original location
+                                    const allSpaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                                    for (const folder of allSpaceFolders) {
+                                        const searchBookmarks = async (folderId) => {
+                                            const items = await chrome.bookmarks.getChildren(folderId);
+                                            for (const item of items) {
+                                                if (item.url === tab.url) {
+                                                    await chrome.bookmarks.remove(item.id);
+                                                } else if (!item.url) {
+                                                    // Recursively search in subfolders
+                                                    await searchBookmarks(item.id);
+                                                }
+                                            }
+                                        };
+                                        await searchBookmarks(folder.id);
+                                    }
+
+                                    // Create the bookmark in the new location
+                                    await chrome.bookmarks.create({
+                                        parentId: parentId,
+                                        title: tab.title,
+                                        url: tab.url
+                                    });
                                 }
                             }
 
@@ -371,9 +439,54 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
     });
 }
 
+async function createNewFolder(spaceElement) {
+    const pinnedContainer = spaceElement.querySelector('[data-tab-type="pinned"]');
+    const folderTemplate = document.getElementById('folderTemplate');
+    const newFolder = folderTemplate.content.cloneNode(true);
+    const folderElement = newFolder.querySelector('.folder');
+    const folderNameInput = folderElement.querySelector('.folder-name');
+    const folderToggle = folderElement.querySelector('.folder-toggle');
+    const folderContent = folderElement.querySelector('.folder-content');
+
+    // Set up folder toggle functionality
+    folderToggle.addEventListener('click', () => {
+        folderContent.classList.toggle('collapsed');
+        folderToggle.classList.toggle('collapsed');
+    });
+
+    // Set up folder name input
+    folderNameInput.addEventListener('change', async () => {
+        const spaceId = spaceElement.dataset.spaceId;
+        const space = spaces.find(s => s.id === parseInt(spaceId));
+        if (space) {
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            if (bookmarkFolders.length > 0) {
+                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                const spaceFolder = spaceFolders.find(f => f.title === space.name);
+                if (spaceFolder) {
+                    const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                    const folder = existingFolders.find(f => f.title === folderNameInput.value);
+                    if (!folder) {
+                        await chrome.bookmarks.create({
+                            parentId: spaceFolder.id,
+                            title: folderNameInput.value
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    // Add the new folder to the pinned container
+    pinnedContainer.appendChild(folderElement);
+    folderNameInput.focus();
+}
+
 async function loadTabs(space, pinnedContainer, tempContainer) {
     console.log('Loading tabs for space:', space.id);
     console.log('Space bookmarks in space:', space.spaceBookmarks);
+
+    var bookmarkedTabURLs = [];
     try {
         const tabs = await chrome.tabs.query({});
         const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
@@ -383,58 +496,59 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
             const spaceFolder = spaceFolders.find(f => f.title == space.name);
 
             if (spaceFolder) {
-                // Load space bookmarks from bookmarks
-                const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                // Recursive function to process bookmarks and folders
+                async function processBookmarkNode(node, container) {
+                    const bookmarks = await chrome.bookmarks.getChildren(node.id);
+                    console.log('Processing bookmarks:', bookmarks);
+                    const processedUrls = new Set();
 
-                console.log('Loading active space bookmarks from bookmarks...', bookmarks);
-                var bookmarkedTabURLs= [];
-                for (const bookmark of bookmarks) {
-                    const existingBookmark = tabs.find(t => t.url == bookmark.url);
-                    if (existingBookmark) {
-                        console.log('Creating UI element for active space bookmark:', existingBookmark);
-                        bookmarkedTabURLs.push(existingBookmark.url);
-                        const tabElement = createTabElement(existingBookmark, true);
-                        pinnedContainer.appendChild(tabElement);
+                    for (const item of bookmarks) {
+                        if (!item.url) {
+                            // This is a folder
+                            const folderElement = document.createElement('div');
+                            folderElement.className = 'folder';
+                            folderElement.innerHTML = `
+                                <div class="folder-header">
+                                    <input type="text" class="folder-name" value="${item.title}" readonly>
+                                </div>
+                                <div class="folder-content"></div>
+                            `;
+                            container.appendChild(folderElement);
+                            
+                            // Recursively process the folder's contents
+                            await processBookmarkNode(item, folderElement.querySelector('.folder-content'));
+                        } else {
+                            // This is a bookmark
+                            if (!processedUrls.has(item.url)) {
+                                const existingTab = tabs.find(t => t.url === item.url);
+                                if (existingTab) {
+                                    console.log('Creating UI element for active bookmark:', existingTab);
+                                    bookmarkedTabURLs.push(existingTab.url);
+                                    const tabElement = createTabElement(existingTab, true);
+                                    container.appendChild(tabElement);
+                                } else {
+                                    // Create UI element for inactive bookmark
+                                    const bookmarkTab = {
+                                        id: null,
+                                        title: item.title,
+                                        url: item.url,
+                                        favIconUrl: null,
+                                        spaceName: space.name
+                                    };
+                                    console.log('Creating UI element for inactive bookmark:', item.title);
+                                    const tabElement = createTabElement(bookmarkTab, true, true);
+                                    bookmarkedTabURLs.push(item.url);
+                                    container.appendChild(tabElement);
+                                }
+                                processedUrls.add(item.url);
+                            }
+                        }
                     }
+                    return bookmarkedTabURLs;
                 }
 
-                // First, handle active space bookmarks
-                // for (const tabId of space.spaceBookmarks) {
-                //     const tab = tabs.find(t => t.id === tabId);
-                //     console.log('Checking if active space bookmark exists:', tab);
-                //     if (tab) {
-                //         // Only create tab element if bookmark exists for this URL
-                //         const existingBookmark = bookmarks.find(b => b.url === tab.url);
-                //         if (existingBookmark) {
-                //             console.log('Creating UI element for active space bookmark:', tab.id, tab.title);
-                //             const tabElement = createTabElement(tab, true);
-                //             pinnedContainer.appendChild(tabElement);
-                //         }
-                //     }
-                // }
-
-                console.log('Loading inactive space bookmarks from bookmarks...');
-                // Then, handle inactive space bookmarks from bookmarks
-                for (const bookmark of bookmarks) {
-                    // Only create element if there's no active tab with this URL
-                    const activeTab = tabs.find(t => t.url == bookmark.url);
-                    if (!activeTab) {
-                        const bookmarkTab = {
-                            id: null,
-                            title: bookmark.title,
-                            url: bookmark.url,
-                            favIconUrl: null,
-                            spaceName: space.name
-                        };
-                        console.log('Creating UI element for inactive space bookmark from bookmark:', bookmark.title);
-                        const tabElement = createTabElement(bookmarkTab, true, true);
-                        bookmarkedTabURLs.push(bookmark.url);
-
-                        pinnedContainer.appendChild(tabElement);
-                    }
-                }
-
-
+                // Process the space folder and get all bookmarked URLs
+                bookmarkedTabURLs = await processBookmarkNode(spaceFolder, pinnedContainer);
             }
         }
 

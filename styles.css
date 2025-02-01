@@ -133,6 +133,10 @@ body {
     outline: none;
 }
 
+.space-options-container {
+    position: relative;
+}
+
 .space-options {
     background: none;
     border: none;
@@ -145,6 +149,100 @@ body {
 
 .space-options:hover {
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+.space-options-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    min-width: 150px;
+    z-index: 1000;
+}
+
+.space-options-container:hover .space-options-dropdown {
+    display: flex;
+}
+
+.space-options-dropdown button {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    text-align: left;
+    cursor: pointer;
+    color: #333;
+    font-size: 14px;
+}
+
+.space-options-dropdown button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.folder {
+    margin: 8px 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.folder-header::before {
+    content: "📁";
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.folder-name {
+    flex: 1;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.folder-name:focus {
+    background-color: rgba(255, 255, 255, 0.3);
+    outline: none;
+}
+
+.folder-toggle {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+.folder-toggle.collapsed {
+    transform: rotate(-90deg);
+}
+
+.folder-content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.folder-content.collapsed {
+    display: none;
 }
 
 .pinned-tabs,
