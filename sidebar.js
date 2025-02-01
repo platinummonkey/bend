@@ -1,3 +1,5 @@
+import { FOLDER_CLOSED_ICON, FOLDER_OPEN_ICON } from './icons.js';
+
 // DOM Elements
 const spacesList = document.getElementById('spacesList');
 const spaceSwitcher = document.getElementById('spaceSwitcher');
@@ -516,6 +518,7 @@ async function createNewFolder(spaceElement) {
     const folderHeader = folderElement.querySelector('.folder-header');
     const folderTitle = folderElement.querySelector('.folder-title');
     const folderNameInput = folderElement.querySelector('.folder-name');
+    const folderIcon = folderElement.querySelector('.folder-icon');
     const folderToggle = folderElement.querySelector('.folder-toggle');
     const folderContent = folderElement.querySelector('.folder-content');
 
@@ -524,11 +527,11 @@ async function createNewFolder(spaceElement) {
     folderContent.classList.toggle('collapsed');
     folderToggle.classList.toggle('collapsed');
 
-    // Set up folder toggle functionality
     folderHeader.addEventListener('click', () => {
         folderElement.classList.toggle('collapsed');
         folderContent.classList.toggle('collapsed');
         folderToggle.classList.toggle('collapsed');
+        folderIcon.innerHTML = folderElement.classList.contains('collapsed') ? FOLDER_CLOSED_ICON : FOLDER_OPEN_ICON;
     });
 
     // Set up folder name input
@@ -589,6 +592,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             const newFolder = folderTemplate.content.cloneNode(true);
                             const folderElement = newFolder.querySelector('.folder');
                             const folderHeader = folderElement.querySelector('.folder-header');
+                            const folderIcon = folderElement.querySelector('.folder-icon');
                             const folderTitle = folderElement.querySelector('.folder-title');
                             const folderNameInput = folderElement.querySelector('.folder-name');
                             const folderContent = folderElement.querySelector('.folder-content');
@@ -643,6 +647,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                                 folderElement.classList.toggle('collapsed');
                                 folderContent.classList.toggle('collapsed');
                                 folderToggle.classList.toggle('collapsed');
+                                folderIcon.innerHTML = folderElement.classList.contains('collapsed') ? FOLDER_CLOSED_ICON : FOLDER_OPEN_ICON;
                             });
 
                             folderNameInput.value = item.title;
