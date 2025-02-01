@@ -82,6 +82,28 @@ async function updatePinnedFavicons() {
             pinnedFavicons.appendChild(faviconElement);
         }
     });
+    pinnedFavicons.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    });
+
+    pinnedFavicons.addEventListener('dragleave', e => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+    });
+
+    pinnedFavicons.addEventListener('drop', async e => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const draggingElement = document.querySelector('.dragging');
+        if (draggingElement && draggingElement.dataset.tabId) {
+            const tabId = parseInt(draggingElement.dataset.tabId);
+            await chrome.tabs.update(tabId, { pinned: true });
+            updatePinnedFavicons();
+            // Remove the tab from its original container
+            draggingElement.remove();
+        }
+    });
 }
 
 // Initialize the sidebar when the DOM is loaded
@@ -1063,10 +1085,10 @@ function handleTabUpdate(tabId, changeInfo, tab) {
 
     // Handle tab pinning state changes
     if (changeInfo.pinned !== undefined) {
-        const space = spaces.find(s => s.temporaryTabs.includes(tabId));
-        if (space) {
-            // Remove from temporary tabs if pinned
-            if (changeInfo.pinned) {
+        if (changeInfo.pinned) {
+            // Handle pinning: Remove from temporary tabs
+            const space = spaces.find(s => s.temporaryTabs.includes(tabId));
+            if (space) {
                 space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
                 saveSpaces();
 
@@ -1075,11 +1097,30 @@ function handleTabUpdate(tabId, changeInfo, tab) {
                 if (tabElement) {
                     tabElement.remove();
                 }
+            }
+        } else {
+            // Handle unpinning: Add to temporary tabs of current space and group with current space's tabs
+            const space = spaces.find(s => s.id === activeSpaceId);
+            console.log("handle unpinning");
+            if (space && !space.temporaryTabs.includes(tabId)) {
+                console.log("found space");
+                // Add to current space's tab group
+                chrome.tabs.group({ tabIds: tabId, groupId: space.id });
+                space.temporaryTabs.push(tabId);
+                saveSpaces();
 
-                // Update pinned favicons
-                updatePinnedFavicons();
+                // Add the tab element to temporary section
+                const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
+                if (spaceElement) {
+                    console.log("adding tab to temp");
+                    const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
+                    const tabElement = createTabElement(tab);
+                    tempContainer.appendChild(tabElement);
+                }
             }
         }
+        // Update pinned favicons for both pinning and unpinning
+        updatePinnedFavicons();
     }
 
     // Update tab element if it exists
@@ -1157,16 +1198,56 @@ function handleTabMove(tabId, moveInfo) {
         return;
     }
     console.log('Tab moved:', tabId, moveInfo);
-    // Update tab position in DOM if needed
-    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-    if (tabElement) {
-        const container = tabElement.parentElement;
-        const tabs = Array.from(container.children);
-        const currentIndex = tabs.indexOf(tabElement);
-        if (currentIndex !== moveInfo.toIndex) {
-            container.insertBefore(tabElement, container.children[moveInfo.toIndex]);
+
+    // Get the tab's current information
+    chrome.tabs.get(tabId, async (tab) => {
+        const newGroupId = tab.groupId;
+        console.log('Tab moved to group:', newGroupId);
+
+        // Find the source and destination spaces
+        const sourceSpace = spaces.find(s => 
+            s.temporaryTabs.includes(tabId) || s.spaceBookmarks.includes(tabId)
+        );
+        const destSpace = spaces.find(s => s.id === newGroupId);
+
+        if (sourceSpace && destSpace && sourceSpace.id !== destSpace.id) {
+            console.log('Moving tab between spaces:', sourceSpace.name, '->', destSpace.name);
+
+            // Remove from source space
+            sourceSpace.temporaryTabs = sourceSpace.temporaryTabs.filter(id => id !== tabId);
+            sourceSpace.spaceBookmarks = sourceSpace.spaceBookmarks.filter(id => id !== tabId);
+
+            // Add to destination space's temporary tabs
+            if (!destSpace.temporaryTabs.includes(tabId)) {
+                destSpace.temporaryTabs.push(tabId);
+            }
+
+            // Update the DOM
+            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+            if (tabElement) {
+                const destSpaceElement = document.querySelector(`[data-space-id="${destSpace.id}"]`);
+                if (destSpaceElement) {
+                    const destTempContainer = destSpaceElement.querySelector('[data-tab-type="temporary"]');
+                    if (destTempContainer) {
+                        destTempContainer.appendChild(tabElement);
+                    }
+                }
+            }
+
+            saveSpaces();
+        } else {
+            // Handle regular tab position updates within the same space
+            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+            if (tabElement) {
+                const container = tabElement.parentElement;
+                const tabs = Array.from(container.children);
+                const currentIndex = tabs.indexOf(tabElement);
+                if (currentIndex !== moveInfo.toIndex) {
+                    container.insertBefore(tabElement, container.children[moveInfo.toIndex]);
+                }
+            }
         }
-    }
+    });
 }
 
 function handleTabActivated(activeInfo) {
