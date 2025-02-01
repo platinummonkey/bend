@@ -10,6 +10,8 @@ let spaces = [];
 let activeSpaceId = null;
 let isCreatingSpace = false;
 let isOpeningBookmark = false;
+let isDraggingTab = false;
+
 // Helper function to generate UUID
 function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -358,12 +360,28 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                 }
 
                 // Handle tab being moved to pinned section or folder
-                if (container.dataset.tabType === 'pinned' && draggingElement.dataset.tabId) {
+                if (container.dataset.tabType === 'pinned' && draggingElement.dataset.tabId && !isDraggingTab) {
                     console.log("Tab dragged to pinned section or folder");
+                    isDraggingTab = true;
                     const tabId = parseInt(draggingElement.dataset.tabId);
                     chrome.tabs.get(tabId, async (tab) => {
                         const spaceId = container.closest('.space').dataset.spaceId;
                         const space = spaces.find(s => s.id === parseInt(spaceId));
+
+                        const searchBookmarks = async (folderId) => {
+                            const items = await chrome.bookmarks.getChildren(folderId);
+                            console.log("searching to delete", folderId, items);
+                            for (const item of items) {
+                                if (item.url === tab.url) {
+                                    console.log("found and deleted");
+                                    await chrome.bookmarks.remove(item.id);
+                                } else if (!item.url) {
+                                    console.log("recursive folder search", item.id);
+                                    // Recursively search in subfolders
+                                    await searchBookmarks(item.id);
+                                }
+                            }
+                        };
 
                         if (space && tab) {
                             // Move tab from temporary to pinned in space data
@@ -384,6 +402,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                 if (spaceFolder) {
                                     let parentId = spaceFolder.id;
                                     if (targetFolder) {
+                                        console.log("moving into a folder");
                                         const folderElement = targetFolder.closest('.folder');
                                         const folderName = folderElement.querySelector('.folder-name').value;
                                         const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
@@ -400,38 +419,39 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                         const existingBookmarks = await chrome.bookmarks.getChildren(parentId);
                                         if (existingBookmarks.some(b => b.url === tab.url)) {
                                             console.log('Bookmark already exists in folder:', folderName);
+                                            isDraggingTab = false;
                                             return;
                                         }
-                                    }
 
-                                    // Find and remove the bookmark from its original location
-                                    const allSpaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                                    for (const folder of allSpaceFolders) {
-                                        const searchBookmarks = async (folderId) => {
-                                            const items = await chrome.bookmarks.getChildren(folderId);
-                                            for (const item of items) {
-                                                if (item.url === tab.url) {
-                                                    await chrome.bookmarks.remove(item.id);
-                                                } else if (!item.url) {
-                                                    // Recursively search in subfolders
-                                                    await searchBookmarks(item.id);
-                                                }
-                                            }
-                                        };
-                                        await searchBookmarks(folder.id);
-                                    }
+                                        // Find and remove the bookmark from its original location
+                                        await searchBookmarks(spaceFolder.id);
 
-                                    // Create the bookmark in the new location
-                                    await chrome.bookmarks.create({
-                                        parentId: parentId,
-                                        title: tab.title,
-                                        url: tab.url
-                                    });
+                                        // Create the bookmark in the new location
+                                        await chrome.bookmarks.create({
+                                            parentId: parentId,
+                                            title: tab.title,
+                                            url: tab.url
+                                        });
+                                    } else {
+                                        const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                        const existingBookmark = bookmarks.find(b => b.url === tab.url);
+                                        if (!existingBookmark) {
+                                            // delete existing bookmark
+                                            await searchBookmarks(spaceFolder.id);
+
+                                            await chrome.bookmarks.create({
+                                                parentId: spaceFolder.id,
+                                                title: tab.title,
+                                                url: tab.url
+                                            });
+                                        }
+                                    }
                                 }
                             }
 
                             saveSpaces();
                         }
+                        isDraggingTab = false;
                     });
                 }
             }
