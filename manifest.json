@@ -20,5 +20,8 @@
   "web_accessible_resources": [{
     "resources": ["sidebar.js"],
     "matches": ["<all_urls>"]
-  }]
+  }],
+  "icons": {
+    "128": "assets/icon.png"
+  }
 }
