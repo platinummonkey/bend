@@ -166,6 +166,26 @@ async function initSidebar() {
         } else {
             const result = await chrome.storage.local.get('spaces');
             console.log("local storage", result);
+
+            // Find tabs that aren't in any group
+            const ungroupedTabs = allTabs.filter(tab => tab.groupId === -1);
+            let defaultGroupId = null;
+
+            // If there are ungrouped tabs, check for existing Default group or create new one
+            if (ungroupedTabs.length > 0) {
+                console.log("found ungrouped tabs", ungroupedTabs);
+                const defaultGroup = tabGroups.find(group => group.title === 'Default');
+                if (defaultGroup) {
+                    console.log("found existing default group", defaultGroup);
+                    // Move ungrouped tabs to existing Default group
+                    await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id), groupId: defaultGroup.id});
+                } else {
+                    // Create new Default group
+                    defaultGroupId = await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id)});
+                    await chrome.tabGroups.update(defaultGroupId, {title: 'Default', color: 'grey'});
+                }
+            }
+
             // Load existing tab groups as spaces
             spaces = await Promise.all(tabGroups.map(async group => {
                 const tabs = await chrome.tabs.query({groupId: group.id});
