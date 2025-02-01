@@ -234,6 +234,11 @@ h3 {
     display: none;
 }
 
+.folder.collapsed div.folder-icon {
+    width: 16px;
+    margin-right: 10px;
+}
+
 .folder.collapsed:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
@@ -259,7 +264,7 @@ h3 {
 }
 
 .folder-icon {
-    width: 16px;
+    width: 18px;
     height: 16px;
     margin-right: 8px;
     fill: currentColor;
