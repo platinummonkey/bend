@@ -553,11 +553,56 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             const folderToggle = folderElement.querySelector('.folder-toggle');
                             const placeHolderElement = folderElement.querySelector('.tab-placeholder');
                             // Set up folder toggle functionality
+                            // Add context menu for folder
+                            folderElement.addEventListener('contextmenu', async (e) => {
+                                e.preventDefault();
+                                const contextMenu = document.createElement('div');
+                                contextMenu.classList.add('context-menu');
+                                contextMenu.style.position = 'fixed';
+                                contextMenu.style.left = `${e.clientX}px`;
+                                contextMenu.style.top = `${e.clientY}px`;
+                                
+                                const deleteOption = document.createElement('div');
+                                deleteOption.classList.add('context-menu-item');
+                                deleteOption.textContent = 'Delete Folder';
+                                deleteOption.addEventListener('click', async () => {
+                                    if (confirm('Are you sure you want to delete this folder and all its contents?')) {
+                                        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                                        if (bookmarkFolders.length > 0) {
+                                            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                                            const spaceFolder = spaceFolders.find(f => f.title === space.name);
+                                            if (spaceFolder) {
+                                                const folders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                                const folder = folders.find(f => f.title === item.title);
+                                                if (folder) {
+                                                    await chrome.bookmarks.removeTree(folder.id);
+                                                    folderElement.remove();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    contextMenu.remove();
+                                });
+                                
+                                contextMenu.appendChild(deleteOption);
+                                document.body.appendChild(contextMenu);
+                                
+                                // Close context menu when clicking outside
+                                const closeContextMenu = (e) => {
+                                    if (!contextMenu.contains(e.target)) {
+                                        contextMenu.remove();
+                                        document.removeEventListener('click', closeContextMenu);
+                                    }
+                                };
+                                document.addEventListener('click', closeContextMenu);
+                            });
+
                             folderHeader.addEventListener('click', () => {
                                 folderElement.classList.toggle('collapsed');
                                 folderContent.classList.toggle('collapsed');
                                 folderToggle.classList.toggle('collapsed');
                             });
+
                             folderNameInput.value = item.title;
                             folderNameInput.readOnly = true;
                             folderNameInput.disabled = true;

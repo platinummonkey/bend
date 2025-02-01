@@ -98,6 +98,30 @@ body {
     object-fit: contain;
 }
 
+.context-menu {
+    display: block;
+    position: fixed;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    background-color: #fff;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    color: #333;
+}
+
+.context-menu-item:hover {
+    background-color: #f5f5f5;
+}
+
 .spaces-list {
     flex-grow: 1;
     display: flex;
