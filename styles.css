@@ -196,6 +196,14 @@ body {
     background-color: rgba(1, 1, 1, 0);
 }
 
+.folder.collapsed div.tab-placeholder {
+    display: none;
+}
+
+.folder.collapsed:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
 .folder-title {
     flex: 1;
     white-space: nowrap;
@@ -266,6 +274,22 @@ body {
 .folder-content.collapsed {
     display: none;
     min-height: 0px;
+}
+
+.tab-placeholder {
+    display: flex;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    padding: 4px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    z-index: 0;
+    border: 2px dotted rgba(0, 0, 0, 0.1);
+}
+
+.tab-placeholder.hidden {
+    display: none;
 }
 
 .pinned-tabs,
@@ -397,7 +421,7 @@ body {
     display: flex;
     align-items: center;
     padding: 4px 12px;
-    margin: 4px 0;
+    margin-bottom: 4px;
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.2s;

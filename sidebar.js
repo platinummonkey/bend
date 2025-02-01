@@ -350,10 +350,9 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
             if (draggingElement) {
                 const targetFolder = e.target.closest('.folder-content');
                 const targetContainer = targetFolder || container;
-                
+
                 // Get the element we're dragging over
                 const afterElement = getDragAfterElement(targetContainer, e.clientY);
-                console.log('afterElement', afterElement);
                 if (afterElement) {
                     targetContainer.insertBefore(draggingElement, afterElement);
                 } else {
@@ -433,6 +432,13 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                             title: tab.title,
                                             url: tab.url
                                         });
+
+                                        // hide placeholder
+                                        const placeHolderElement = folderElement.querySelector('.tab-placeholder');
+                                        if (placeHolderElement) {
+                                            console.log("hiding from", folderElement);
+                                            placeHolderElement.classList.add('hidden');
+                                        }
                                     } else {
                                         const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
                                         const existingBookmark = bookmarks.find(b => b.url === tab.url);
@@ -470,6 +476,11 @@ async function createNewFolder(spaceElement) {
     const folderNameInput = folderElement.querySelector('.folder-name');
     const folderToggle = folderElement.querySelector('.folder-toggle');
     const folderContent = folderElement.querySelector('.folder-content');
+
+    // Open new folder by default
+    folderElement.classList.toggle('collapsed');
+    folderContent.classList.toggle('collapsed');
+    folderToggle.classList.toggle('collapsed');
 
     // Set up folder toggle functionality
     folderHeader.addEventListener('click', () => {
@@ -540,6 +551,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             const folderNameInput = folderElement.querySelector('.folder-name');
                             const folderContent = folderElement.querySelector('.folder-content');
                             const folderToggle = folderElement.querySelector('.folder-toggle');
+                            const placeHolderElement = folderElement.querySelector('.tab-placeholder');
                             // Set up folder toggle functionality
                             folderHeader.addEventListener('click', () => {
                                 folderElement.classList.toggle('collapsed');
@@ -552,6 +564,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             folderNameInput.classList.toggle('hidden');
                             folderTitle.innerHTML = item.title;
                             folderTitle.classList.toggle('hidden');
+                            placeHolderElement.classList.remove('hidden');
 
                             container.appendChild(folderElement);
                             
@@ -581,6 +594,10 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                                     container.appendChild(tabElement);
                                 }
                                 processedUrls.add(item.url);
+                                const placeHolderElement = container.querySelector('.tab-placeholder');
+                                if (placeHolderElement) {
+                                    placeHolderElement.classList.add('hidden');
+                                }
                             }
                         }
                     }
