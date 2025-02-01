@@ -184,18 +184,35 @@ body {
 
 .folder {
     margin: 8px 0;
-    background-color: rgba(255, 255, 255, 0.1);
+    /* background-color: rgba(255, 255, 255, 0.1); */
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    /* border: 1px solid rgba(0, 0, 0, 0.1); */
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s;
+}
+
+.folder.collapsed {
+    background-color: rgba(1, 1, 1, 0);
+}
+
+.folder-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-title.hidden {
+    display: none;
 }
 
 .folder-header {
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    /* background-color: rgba(255, 255, 255, 0.2); */
+    /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
 }
 
 .folder-header::before {
@@ -219,6 +236,10 @@ body {
     outline: none;
 }
 
+.folder-name.hidden {
+    display: none;
+}
+
 .folder-toggle {
     background: none;
     border: none;
@@ -234,15 +255,17 @@ body {
 }
 
 .folder-content {
-    padding: 12px;
+    padding: 0px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    background-color: rgba(255, 255, 255, 0.05);
+    min-height: 12px;
+    /* gap: 8px; */
+    /* background-color: rgba(1, 1, 1, 0.1); */
 }
 
 .folder-content.collapsed {
     display: none;
+    min-height: 0px;
 }
 
 .pinned-tabs,

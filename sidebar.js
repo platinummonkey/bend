@@ -353,6 +353,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                 
                 // Get the element we're dragging over
                 const afterElement = getDragAfterElement(targetContainer, e.clientY);
+                console.log('afterElement', afterElement);
                 if (afterElement) {
                     targetContainer.insertBefore(draggingElement, afterElement);
                 } else {
@@ -464,12 +465,15 @@ async function createNewFolder(spaceElement) {
     const folderTemplate = document.getElementById('folderTemplate');
     const newFolder = folderTemplate.content.cloneNode(true);
     const folderElement = newFolder.querySelector('.folder');
+    const folderHeader = folderElement.querySelector('.folder-header');
+    const folderTitle = folderElement.querySelector('.folder-title');
     const folderNameInput = folderElement.querySelector('.folder-name');
     const folderToggle = folderElement.querySelector('.folder-toggle');
     const folderContent = folderElement.querySelector('.folder-content');
 
     // Set up folder toggle functionality
-    folderToggle.addEventListener('click', () => {
+    folderHeader.addEventListener('click', () => {
+        folderElement.classList.toggle('collapsed');
         folderContent.classList.toggle('collapsed');
         folderToggle.classList.toggle('collapsed');
     });
@@ -491,6 +495,9 @@ async function createNewFolder(spaceElement) {
                             parentId: spaceFolder.id,
                             title: folderNameInput.value
                         });
+                        folderNameInput.classList.toggle('hidden');
+                        folderTitle.innerHTML = folderNameInput.value;
+                        folderTitle.classList.toggle('hidden');
                     }
                 }
             }
@@ -525,14 +532,27 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                     for (const item of bookmarks) {
                         if (!item.url) {
                             // This is a folder
-                            const folderElement = document.createElement('div');
-                            folderElement.className = 'folder';
-                            folderElement.innerHTML = `
-                                <div class="folder-header">
-                                    <input type="text" class="folder-name" value="${item.title}" readonly>
-                                </div>
-                                <div class="folder-content"></div>
-                            `;
+                            const folderTemplate = document.getElementById('folderTemplate');
+                            const newFolder = folderTemplate.content.cloneNode(true);
+                            const folderElement = newFolder.querySelector('.folder');
+                            const folderHeader = folderElement.querySelector('.folder-header');
+                            const folderTitle = folderElement.querySelector('.folder-title');
+                            const folderNameInput = folderElement.querySelector('.folder-name');
+                            const folderContent = folderElement.querySelector('.folder-content');
+                            const folderToggle = folderElement.querySelector('.folder-toggle');
+                            // Set up folder toggle functionality
+                            folderHeader.addEventListener('click', () => {
+                                folderElement.classList.toggle('collapsed');
+                                folderContent.classList.toggle('collapsed');
+                                folderToggle.classList.toggle('collapsed');
+                            });
+                            folderNameInput.value = item.title;
+                            folderNameInput.readOnly = true;
+                            folderNameInput.disabled = true;
+                            folderNameInput.classList.toggle('hidden');
+                            folderTitle.innerHTML = item.title;
+                            folderTitle.classList.toggle('hidden');
+
                             container.appendChild(folderElement);
                             
                             // Recursively process the folder's contents
