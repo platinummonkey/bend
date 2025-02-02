@@ -11,6 +11,7 @@ const spaceTemplate = document.getElementById('spaceTemplate');
 let spaces = [];
 let activeSpaceId = null;
 let isCreatingSpace = false;
+// let isCreatingTab = false;
 let isOpeningBookmark = false;
 let isDraggingTab = false;
 
@@ -121,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tab.pinned) updatePinnedFavicons(); // Update favicons when a tab is pinned/unpinned
     });
     chrome.tabs.onRemoved.addListener(handleTabRemove);
-    chrome.tabs.onMoved.addListener(handleTabMove);
+    // chrome.tabs.onMoved.addListener(handleTabMove);
     chrome.tabs.onActivated.addListener(handleTabActivated);
 });
 
@@ -129,7 +130,7 @@ async function initSidebar() {
     console.log('Initializing sidebar...');
     try {
         const tabGroups = await chrome.tabGroups.query({});
-        const allTabs = await chrome.tabs.query({});
+        let allTabs = await chrome.tabs.query({});
         console.log("tabGroups", tabGroups);
         console.log("allTabs", allTabs);
         // Create bookmarks folder for spaces if it doesn't exist
@@ -142,8 +143,17 @@ async function initSidebar() {
         }
 
         if (tabGroups.length === 0) {
+            let currentTabs = allTabs.filter(tab => tab.id && !tab.pinned) ?? [];
+
+            if (currentTabs.length == 0) {
+                await chrome.tabs.create({ active: true });
+                allTabs = await chrome.tabs.query({});
+                currentTabs = allTabs.filter(tab => tab.id && !tab.pinned) ?? [];
+            }
+
             // Create default tab group and move all tabs to it
-            const groupId = await chrome.tabs.group({tabIds: allTabs.map(tab => tab.id)});
+            console.log('currentTabs', currentTabs);
+            const groupId = await chrome.tabs.group({tabIds: currentTabs.map(tab => tab.id)});
             await chrome.tabGroups.update(groupId, {title: 'Default', color: 'grey'});
 
             // Create default space with UUID
@@ -152,7 +162,7 @@ async function initSidebar() {
                 uuid: generateUUID(),
                 name: 'Default',
                 spaceBookmarks: [],
-                temporaryTabs: allTabs.filter(tab => !tab.pinned).map(tab => tab.id)
+                temporaryTabs: currentTabs.map(tab => tab.id),
             };
 
             // Create bookmark folder for space bookmarks using UUID
@@ -170,7 +180,7 @@ async function initSidebar() {
             console.log("local storage", result);
 
             // Find tabs that aren't in any group
-            const ungroupedTabs = allTabs.filter(tab => tab.groupId === -1);
+            const ungroupedTabs = allTabs.filter(tab => tab.groupId === -1 && !tab.pinned);
             let defaultGroupId = null;
 
             // If there are ungrouped tabs, check for existing Default group or create new one
