@@ -27,7 +27,7 @@ function generateUUID() {
 // Helper function to update bookmark for a tab
 async function updateBookmarkForTab(tab) {
     console.log("updating tab", tab);
-    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
     if (bookmarkFolders.length > 0) {
         const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
         for (const spaceFolder of spaceFolders) {
@@ -134,10 +134,10 @@ async function initSidebar() {
         console.log("tabGroups", tabGroups);
         console.log("allTabs", allTabs);
         // Create bookmarks folder for spaces if it doesn't exist
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
         let spacesFolder;
         if (bookmarkFolders.length === 0) {
-            spacesFolder = await chrome.bookmarks.create({title: 'Arc Spaces'});
+            spacesFolder = await chrome.bookmarks.create({title: 'Arcify'});
         } else {
             spacesFolder = bookmarkFolders[0];
         }
@@ -271,7 +271,7 @@ function createSpaceElement(space) {
     nameInput.value = space.name;
     nameInput.addEventListener('change', async () => {
         // Update bookmark folder name
-        const bookmarkFolders =  await chrome.bookmarks.search({title: 'Arc Spaces'});
+        const bookmarkFolders =  await chrome.bookmarks.search({title: 'Arcify'});
         const oldName = space.name;
         if (bookmarkFolders.length > 0) {
             console.log("updating bookmark folder name", bookmarkFolders, oldName);
@@ -449,7 +449,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                             const targetFolder = targetFolderContent ? targetFolderContent.closest('.folder') : null;
 
                             // Add to bookmarks if URL doesn't exist
-                            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
                             if (bookmarkFolders.length > 0) {
                                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                                 const spaceFolder = spaceFolders.find(f => f.title == space.name);
@@ -549,7 +549,7 @@ async function createNewFolder(spaceElement) {
         const spaceId = spaceElement.dataset.spaceId;
         const space = spaces.find(s => s.id === parseInt(spaceId));
         if (space) {
-            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
             if (bookmarkFolders.length > 0) {
                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                 const spaceFolder = spaceFolders.find(f => f.title === space.name);
@@ -582,7 +582,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
     var bookmarkedTabURLs = [];
     try {
         const tabs = await chrome.tabs.query({});
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
 
         if (bookmarkFolders.length > 0) {
             const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
@@ -623,7 +623,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                                 deleteOption.textContent = 'Delete Folder';
                                 deleteOption.addEventListener('click', async () => {
                                     if (confirm('Are you sure you want to delete this folder and all its contents?')) {
-                                        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                                        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
                                         if (bookmarkFolders.length > 0) {
                                             const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                                             const spaceFolder = spaceFolders.find(f => f.title === space.name);
@@ -768,7 +768,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
             await createNewTab(async () => {
                 if (isBookmarkOnly) {
                     // Remove from bookmarks
-                    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
                     if (bookmarkFolders.length > 0) {
                         const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                         const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -786,7 +786,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
                         }
                     }
                 } else if (isPinned) {
-                    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+                    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
                     if (bookmarkFolders.length > 0) {
                         const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                         const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -817,7 +817,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
 
         if (isBookmarkOnly) {
             // Remove from bookmarks
-            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
             if (bookmarkFolders.length > 0) {
                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                 const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -835,7 +835,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
                 }
             }
         } else if (isPinned) {
-            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
             if (bookmarkFolders.length > 0) {
                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
                 const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -1009,7 +1009,7 @@ async function createNewSpace() {
         };
 
         // Create bookmark folder for pinned tabs using UUID
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arc Spaces'});
+        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
         if (bookmarkFolders.length > 0) {
             // Check if bookmark folder with this space name already exists
             const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);

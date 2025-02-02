@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Arc-Style Sidebar",
+  "name": "Arcify: Arc like vertical tab spaces",
   "version": "1.0",
   "description": "A sidebar extension that replicates Arc browser's tab management system",
   "permissions": [
