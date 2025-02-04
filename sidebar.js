@@ -1118,7 +1118,12 @@ function handleTabCreated(tab) {
                     if (spaceElement) {
                         const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
                         const tabElement = createTabElement(tab);
-                        tempContainer.appendChild(tabElement);
+                        // Add the tab element to the temporary container to the front
+                        if (tempContainer.children.length > 1) {
+                            tempContainer.insertBefore(tabElement, tempContainer.firstChild);
+                        } else {
+                            tempContainer.appendChild(tabElement);
+                        }
 
                         // Update active state of all tabs
                         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
