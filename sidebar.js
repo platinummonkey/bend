@@ -290,20 +290,9 @@ function createSpaceElement(space) {
     nameInput.value = space.name;
     nameInput.addEventListener('change', async () => {
         // Update bookmark folder name
-        const bookmarkFolders =  await chrome.bookmarks.search({title: 'Arcify'});
         const oldName = space.name;
-        if (bookmarkFolders.length > 0) {
-            console.log("updating bookmark folder name", bookmarkFolders, oldName);
-            await chrome.bookmarks.getSubTree(bookmarkFolders[0].id, async mainFolder => {
-                console.log("mainFolder", mainFolder);
-                // Create bookmark folder for the space if it doesn't exist
-               const bookmarkFolder = mainFolder[0].children?.find(f => f.title == oldName);
-               console.log("finding folder", bookmarkFolder);
-               if (bookmarkFolder) {
-                    await chrome.bookmarks.update(bookmarkFolder.id, {title: nameInput.value});
-                }
-            });
-        }
+        const oldFolder = await getOrCreateSpaceFolder(oldName);
+        await chrome.bookmarks.update(oldFolder.id, { title: nameInput.value });
 
         const tabGroups = await chrome.tabGroups.query({});
         const tabGroupForSpace = tabGroups.find(group => group.id === space.id);
@@ -468,63 +457,60 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                             const targetFolder = targetFolderContent ? targetFolderContent.closest('.folder') : null;
 
                             // Add to bookmarks if URL doesn't exist
-                            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-                            if (bookmarkFolders.length > 0) {
-                                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                                const spaceFolder = spaceFolders.find(f => f.title == space.name);
-                                if (spaceFolder) {
-                                    let parentId = spaceFolder.id;
-                                    if (targetFolder) {
-                                        console.log("moving into a folder");
-                                        const folderElement = targetFolder.closest('.folder');
-                                        const folderName = folderElement.querySelector('.folder-name').value;
-                                        const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
-                                        let folder = existingFolders.find(f => f.title === folderName);
-                                        if (!folder) {
-                                            folder = await chrome.bookmarks.create({
-                                                parentId: spaceFolder.id,
-                                                title: folderName
-                                            });
-                                        }
-                                        parentId = folder.id;
+                            const spaceFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                            const spaceFolder = spaceFolders.find(f => f.title == space.name);
+                            if (spaceFolder) {
+                                let parentId = spaceFolder.id;
+                                if (targetFolder) {
+                                    console.log("moving into a folder");
+                                    const folderElement = targetFolder.closest('.folder');
+                                    const folderName = folderElement.querySelector('.folder-name').value;
+                                    const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                    let folder = existingFolders.find(f => f.title === folderName);
+                                    if (!folder) {
+                                        folder = await chrome.bookmarks.create({
+                                            parentId: spaceFolder.id,
+                                            title: folderName
+                                        });
+                                    }
+                                    parentId = folder.id;
 
-                                        // Check if bookmark already exists in the target folder
-                                        const existingBookmarks = await chrome.bookmarks.getChildren(parentId);
-                                        if (existingBookmarks.some(b => b.url === tab.url)) {
-                                            console.log('Bookmark already exists in folder:', folderName);
-                                            isDraggingTab = false;
-                                            return;
-                                        }
+                                    // Check if bookmark already exists in the target folder
+                                    const existingBookmarks = await chrome.bookmarks.getChildren(parentId);
+                                    if (existingBookmarks.some(b => b.url === tab.url)) {
+                                        console.log('Bookmark already exists in folder:', folderName);
+                                        isDraggingTab = false;
+                                        return;
+                                    }
 
-                                        // Find and remove the bookmark from its original location
+                                    // Find and remove the bookmark from its original location
+                                    await searchBookmarks(spaceFolder.id);
+
+                                    // Create the bookmark in the new location
+                                    await chrome.bookmarks.create({
+                                        parentId: parentId,
+                                        title: tab.title,
+                                        url: tab.url
+                                    });
+
+                                    // hide placeholder
+                                    const placeHolderElement = folderElement.querySelector('.tab-placeholder');
+                                    if (placeHolderElement) {
+                                        console.log("hiding from", folderElement);
+                                        placeHolderElement.classList.add('hidden');
+                                    }
+                                } else {
+                                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                    const existingBookmark = bookmarks.find(b => b.url === tab.url);
+                                    if (!existingBookmark) {
+                                        // delete existing bookmark
                                         await searchBookmarks(spaceFolder.id);
 
-                                        // Create the bookmark in the new location
                                         await chrome.bookmarks.create({
-                                            parentId: parentId,
+                                            parentId: spaceFolder.id,
                                             title: tab.title,
                                             url: tab.url
                                         });
-
-                                        // hide placeholder
-                                        const placeHolderElement = folderElement.querySelector('.tab-placeholder');
-                                        if (placeHolderElement) {
-                                            console.log("hiding from", folderElement);
-                                            placeHolderElement.classList.add('hidden');
-                                        }
-                                    } else {
-                                        const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
-                                        const existingBookmark = bookmarks.find(b => b.url === tab.url);
-                                        if (!existingBookmark) {
-                                            // delete existing bookmark
-                                            await searchBookmarks(spaceFolder.id);
-
-                                            await chrome.bookmarks.create({
-                                                parentId: spaceFolder.id,
-                                                title: tab.title,
-                                                url: tab.url
-                                            });
-                                        }
                                     }
                                 }
                             }
@@ -565,27 +551,18 @@ async function createNewFolder(spaceElement) {
 
     // Set up folder name input
     folderNameInput.addEventListener('change', async () => {
-        const spaceId = spaceElement.dataset.spaceId;
-        const space = spaces.find(s => s.id === parseInt(spaceId));
-        if (space) {
-            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-            if (bookmarkFolders.length > 0) {
-                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                const spaceFolder = spaceFolders.find(f => f.title === space.name);
-                if (spaceFolder) {
-                    const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
-                    const folder = existingFolders.find(f => f.title === folderNameInput.value);
-                    if (!folder) {
-                        await chrome.bookmarks.create({
-                            parentId: spaceFolder.id,
-                            title: folderNameInput.value
-                        });
-                        folderNameInput.classList.toggle('hidden');
-                        folderTitle.innerHTML = folderNameInput.value;
-                        folderTitle.classList.toggle('hidden');
-                    }
-                }
-            }
+        const spaceName = spaceElement.querySelector('.space-name').value;
+        const spaceFolder = await getOrCreateSpaceFolder(spaceName);
+        const existingFolders = await chrome.bookmarks.getChildren(spaceFolder.id);
+        const folder = existingFolders.find(f => f.title === folderNameInput.value);
+        if (!folder) {
+            await chrome.bookmarks.create({
+                parentId: spaceFolder.id,
+                title: folderNameInput.value
+            });
+            folderNameInput.classList.toggle('hidden');
+            folderTitle.innerHTML = folderNameInput.value;
+            folderTitle.classList.toggle('hidden');
         }
     });
 
@@ -1027,21 +1004,8 @@ async function createNewSpace() {
             temporaryTabs: [newTab.id]
         };
 
-        // Create bookmark folder for pinned tabs using UUID
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-        if (bookmarkFolders.length > 0) {
-            // Check if bookmark folder with this space name already exists
-            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-            const spaceFolder = spaceFolders.find(f => f.title === space.name);
-
-            if (!spaceFolder) {
-                // Create a new bookmark folder for this space
-                await chrome.bookmarks.create({
-                    parentId: bookmarkFolders[0].id,
-                    title: space.name
-                });
-            }
-        }
+        // Create bookmark folder for new space
+        await getOrCreateSpaceFolder(space.name);
 
         spaces.push(space);
         console.log('New space created:', { spaceId: space.id, spaceName: space.name });
@@ -1383,4 +1347,30 @@ function deleteSpace(spaceId) {
         saveSpaces();
         updateSpaceSwitcher();
     }
+}
+
+////////////////////////////////////////////////////////////////
+// -- Helper Functions
+////////////////////////////////////////////////////////////////
+
+async function getOrCreateArcifyFolder() {
+    let [ folder ] = await chrome.bookmarks.search({ title: 'Arcify' });
+    if (!folder) {
+        folder = await chrome.bookmarks.create({ title: 'Arcify' });
+    }
+    return folder;
+}
+
+async function getOrCreateSpaceFolder(spaceName) {
+    const arcifyFolder = await getOrCreateArcifyFolder();
+    const children = await chrome.bookmarks.getChildren(arcifyFolder.id);
+    let spaceFolder = children.find((f) => f.title === spaceName);
+
+    if (!spaceFolder) {
+        spaceFolder = await chrome.bookmarks.create({
+            parentId: arcifyFolder.id,
+            title: spaceName
+        });
+    }
+    return spaceFolder;
 }
