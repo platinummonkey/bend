@@ -367,33 +367,18 @@ function getDragAfterElement(container, y) {
 
 function setActiveSpace(spaceId) {
     console.log('Setting active space:', spaceId);
-    activeSpaceId = spaceId;
 
-    // Update UI to reflect active space
-    document.querySelectorAll('.space').forEach(spaceElement => {
-        const isActive = spaceElement.dataset.spaceId === String(spaceId);
-        spaceElement.classList.toggle('active', isActive);
-        spaceElement.style.display = isActive ? 'block' : 'none';
-    });
+    // Centralize logic in our new helper function
+    activateSpaceInDOM(spaceId);
 
-    // Get the currently active tab from Chrome
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    // Get all tabs in the space and activate the last one
+    chrome.tabs.query({ groupId: spaceId }, tabs => {
         if (tabs.length > 0) {
-            const activeTab = tabs[0];
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(t => {
-                t.classList.remove('active');
-                // Add active class only to the currently active tab in the current space
-                if (t.dataset.tabId === String(activeTab.id) &&
-                    t.closest('.space').dataset.spaceId === String(spaceId)) {
-                    t.classList.add('active');
-                }
-            });
+            const lastTab = tabs[tabs.length - 1];
+            chrome.tabs.update(lastTab.id, { active: true });
+            activateTabInDOM(lastTab.id);
         }
     });
-
-    // Update space switcher
-    updateSpaceSwitcher();
 }
 
 function saveSpaces() {
@@ -1123,15 +1108,8 @@ function handleTabUpdate(tabId, changeInfo, tab) {
                 }
             }
             // Update active state when tab's active state changes
-            if (changeInfo.active !== undefined) {
-                if (changeInfo.active) {
-                    // Remove active class from all tabs
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
-
-                    // Add active class to this tab
-                    tabElement.classList.add('active');
-                }
+            if (changeInfo.active !== undefined && changeInfo.active) {
+                activateTabInDOM(tabId);
             }
         }
     });
@@ -1229,7 +1207,6 @@ function handleTabMove(tabId, moveInfo) {
 
 function handleTabActivated(activeInfo) {
     chrome.windows.getCurrent({populate: false}, async (currentWindow) => {
-
         if (activeInfo.windowId !== currentWindow.id) {
             console.log('New tab is in a different window, ignoring...');
             return;
@@ -1244,12 +1221,11 @@ function handleTabActivated(activeInfo) {
 
         if (spaceWithTab && spaceWithTab.id !== activeSpaceId) {
             // Switch to the space containing the tab
-            setActiveSpace(spaceWithTab.id);
+            activateSpaceInDOM(spaceWithTab.id);
+            activateTabInDOM(activeInfo.tabId);
         } else {
-            // Just update the active state of tabs in the current space
-            document.querySelectorAll('.tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.tabId === String(activeInfo.tabId));
-            });
+            // Activate only the tab in the current space
+            activateTabInDOM(activeInfo.tabId);
         }
     });
 }
@@ -1357,4 +1333,31 @@ async function moveTabToSpace(tabId, spaceId, pinned = false) {
 
     // 5. Save the updated spaces to storage
     saveSpaces();
+}
+
+function activateTabInDOM(tabId) {
+    // Remove active class from all tabs and pinned favicons
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.pinned-favicon').forEach(f => f.classList.remove('active'));
+
+    // If there's a tab element with this ID, mark it active
+    const targetTab = document.querySelector(`[data-tab-id="${tabId}"]`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+}
+
+function activateSpaceInDOM(spaceId) {
+    // Update global state
+    activeSpaceId = spaceId;
+
+    // Show/hide space containers
+    document.querySelectorAll('.space').forEach(s => {
+        const isActive = s.dataset.spaceId === String(spaceId);
+        s.classList.toggle('active', isActive);
+        s.style.display = isActive ? 'block' : 'none';
+    });
+
+    // Update space switcher
+    updateSpaceSwitcher();
 }
