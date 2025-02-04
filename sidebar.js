@@ -14,6 +14,7 @@ let isCreatingSpace = false;
 // let isCreatingTab = false;
 let isOpeningBookmark = false;
 let isDraggingTab = false;
+let currentWindow = null;
 
 // Helper function to generate UUID
 function generateUUID() {
@@ -154,13 +155,13 @@ async function initSidebar() {
             // Create default tab group and move all tabs to it
             console.log('currentTabs', currentTabs);
             const groupId = await chrome.tabs.group({tabIds: currentTabs.map(tab => tab.id)});
-            await chrome.tabGroups.update(groupId, {title: 'Default', color: 'grey'});
+            await chrome.tabGroups.update(groupId, {title: 'Home', color: 'grey'});
 
             // Create default space with UUID
             const defaultSpace = {
                 id: groupId,
                 uuid: generateUUID(),
-                name: 'Default',
+                name: 'Home',
                 spaceBookmarks: [],
                 temporaryTabs: currentTabs.map(tab => tab.id),
             };
@@ -186,7 +187,7 @@ async function initSidebar() {
             // If there are ungrouped tabs, check for existing Default group or create new one
             if (ungroupedTabs.length > 0) {
                 console.log("found ungrouped tabs", ungroupedTabs);
-                const defaultGroup = tabGroups.find(group => group.title === 'Default');
+                const defaultGroup = tabGroups.find(group => group.title === 'Home');
                 if (defaultGroup) {
                     console.log("found existing default group", defaultGroup);
                     // Move ungrouped tabs to existing Default group
@@ -194,7 +195,7 @@ async function initSidebar() {
                 } else {
                     // Create new Default group
                     defaultGroupId = await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id)});
-                    await chrome.tabGroups.update(defaultGroupId, {title: 'Default', color: 'grey'});
+                    await chrome.tabGroups.update(defaultGroupId, {title: 'Home', color: 'grey'});
                 }
             }
 
@@ -227,6 +228,7 @@ async function initSidebar() {
                 return space;
             }));
             spaces.forEach(space => createSpaceElement(space));
+            saveSpaces();
             setActiveSpace(spaces[0].id);
         }
     } catch (error) {
@@ -239,11 +241,11 @@ async function initSidebar() {
         const spaceSwitcher = document.getElementById('spaceSwitcher');
         const spaceNameInput = document.getElementById('newSpaceName');
         const isInputVisible = inputContainer.classList.contains('visible');
-        
+
         // Toggle visibility classes
         inputContainer.classList.toggle('visible');
         addSpaceBtn.classList.toggle('active');
-        
+
         // Toggle space switcher visibility
         if (isInputVisible) {
             spaceSwitcher.style.opacity = '1';
@@ -256,6 +258,8 @@ async function initSidebar() {
     });
     document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
     newTabBtn.addEventListener('click', createNewTab);
+
+    currentWindow = await chrome.windows.getCurrent({populate: false});
 }
 
 function createSpaceElement(space) {
@@ -468,7 +472,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                             });
                                         }
                                         parentId = folder.id;
-                                        
+
                                         // Check if bookmark already exists in the target folder
                                         const existingBookmarks = await chrome.bookmarks.getChildren(parentId);
                                         if (existingBookmarks.some(b => b.url === tab.url)) {
@@ -617,7 +621,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                                 contextMenu.style.position = 'fixed';
                                 contextMenu.style.left = `${e.clientX}px`;
                                 contextMenu.style.top = `${e.clientY}px`;
-                                
+
                                 const deleteOption = document.createElement('div');
                                 deleteOption.classList.add('context-menu-item');
                                 deleteOption.textContent = 'Delete Folder';
@@ -639,10 +643,10 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                                     }
                                     contextMenu.remove();
                                 });
-                                
+
                                 contextMenu.appendChild(deleteOption);
                                 document.body.appendChild(contextMenu);
-                                
+
                                 // Close context menu when clicking outside
                                 const closeContextMenu = (e) => {
                                     if (!contextMenu.contains(e.target)) {
@@ -669,7 +673,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                             placeHolderElement.classList.remove('hidden');
 
                             container.appendChild(folderElement);
-                            
+
                             // Recursively process the folder's contents
                             await processBookmarkNode(item, folderElement.querySelector('.folder-content'));
                         } else {
@@ -950,7 +954,7 @@ function showSpaceNameInput() {
     errorPopup.textContent = 'A space with this name already exists';
     const inputContainer = document.getElementById('addSpaceInputContainer');
     inputContainer.appendChild(errorPopup);
-    
+
     // Remove the error message after 3 seconds
     setTimeout(() => {
         errorPopup.remove();
@@ -977,7 +981,7 @@ async function createNewSpace() {
             errorPopup.textContent = 'A space with this name already exists';
             const inputContainer = document.getElementById('addSpaceInputContainer');
             inputContainer.appendChild(errorPopup);
-            
+
             // Remove the error message after 3 seconds
             setTimeout(() => {
                 errorPopup.remove();
@@ -1072,6 +1076,11 @@ function handleTabCreated(tab) {
         console.log('Skipping tab creation handler - space is being created');
         return;
     }
+    if (tab.windowId !== currentWindow.id) {
+        console.log('New tab is in a different window, ignoring...');
+        return;
+    }
+
     console.log('Tab created:', tab.id);
     // Always ensure we have the current activeSpaceId
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -1114,6 +1123,10 @@ function handleTabCreated(tab) {
 
 function handleTabUpdate(tabId, changeInfo, tab) {
     if (isOpeningBookmark) {
+        return;
+    }
+    if (tab.windowId !== currentWindow.id) {
+        console.log('New tab is in a different window, ignoring...');
         return;
     }
     console.log('Tab updated:', tabId, changeInfo, spaces);
@@ -1192,6 +1205,10 @@ function handleTabUpdate(tabId, changeInfo, tab) {
 }
 
 async function handleTabRemove(tabId) {
+    if (tab.windowId !== currentWindow.id) {
+        console.log('New tab is in a different window, ignoring...');
+        return;
+    }
     console.log('Tab removed:', tabId);
     // Get tab element before removing it
     const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
@@ -1232,6 +1249,10 @@ function handleTabMove(tabId, moveInfo) {
     if (isOpeningBookmark) {
         return;
     }
+    if (tab.windowId !== currentWindow.id) {
+        console.log('New tab is in a different window, ignoring...');
+        return;
+    }
     console.log('Tab moved:', tabId, moveInfo);
 
     // Get the tab's current information
@@ -1240,7 +1261,7 @@ function handleTabMove(tabId, moveInfo) {
         console.log('Tab moved to group:', newGroupId);
 
         // Find the source and destination spaces
-        const sourceSpace = spaces.find(s => 
+        const sourceSpace = spaces.find(s =>
             s.temporaryTabs.includes(tabId) || s.spaceBookmarks.includes(tabId)
         );
         const destSpace = spaces.find(s => s.id === newGroupId);
@@ -1286,6 +1307,10 @@ function handleTabMove(tabId, moveInfo) {
 }
 
 function handleTabActivated(activeInfo) {
+    if (tab.windowId !== currentWindow.id) {
+        console.log('New tab is in a different window, ignoring...');
+        return;
+    }
     console.log('Tab activated:', activeInfo.tabId);
     // Find which space contains this tab
     const spaceWithTab = spaces.find(space =>

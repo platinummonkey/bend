@@ -137,6 +137,10 @@ h3 {
     overflow-y: scroll;
 }
 
+.spaces-list::-webkit-scrollbar {
+    display: none;
+}
+
 .space {
     /* background-color: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -432,7 +436,7 @@ h3 {
 .space-switcher::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
 }
- 
+
 .space-switcher button {
     min-width: 32px;
     max-width: none;
