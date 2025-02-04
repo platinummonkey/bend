@@ -740,6 +740,39 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
         e.stopPropagation(); // Prevent tab activation when closing
         console.log('Closing tab:', tab);
 
+        if (isBookmarkOnly) {
+            // Remove from bookmarks
+            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
+            if (bookmarkFolders.length > 0) {
+                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
+                const activeSpace = spaces.find(s => s.id === activeSpaceId);
+
+                const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
+                console.log("spaceFolder", spaceFolder);
+                if (spaceFolder) {
+                    const searchAndRemoveBookmark = async (folderId) => {
+                        const items = await chrome.bookmarks.getChildren(folderId);
+                        for (const item of items) {
+                            if (item.url === tab.url) {
+                                console.log("removing bookmark", item);
+                                await chrome.bookmarks.remove(item.id);
+                                tabElement.remove();
+                                return true; // Bookmark found and removed
+                            } else if (!item.url) {
+                                // This is a folder, search recursively
+                                const found = await searchAndRemoveBookmark(item.id);
+                                if (found) return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    await searchAndRemoveBookmark(spaceFolder.id);
+                }
+            }
+            return;
+        }
+
         // If last tab is closed, create a new empty tab to prevent tab group from closing
         const tabsInGroup = await chrome.tabs.query({ groupId: activeSpaceId });
         console.log("tabsInGroup", tabsInGroup);
@@ -756,13 +789,24 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
                         const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
                         console.log("spaceFolder", spaceFolder);
                         if (spaceFolder) {
-                            const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
-                            const bookmark = bookmarks.find(b => b.url === tab.url);
-                            if (bookmark) {
-                                console.log("removing bookmark", bookmark);
-                                await chrome.bookmarks.remove(bookmark.id);
-                                tabElement.remove();
-                            }
+                            const searchAndRemoveBookmark = async (folderId) => {
+                                const items = await chrome.bookmarks.getChildren(folderId);
+                                for (const item of items) {
+                                    if (item.url === tab.url) {
+                                        console.log("removing bookmark", item);
+                                        await chrome.bookmarks.remove(item.id);
+                                        tabElement.remove();
+                                        return true; // Bookmark found and removed
+                                    } else if (!item.url) {
+                                        // This is a folder, search recursively
+                                        const found = await searchAndRemoveBookmark(item.id);
+                                        if (found) return true;
+                                    }
+                                }
+                                return false;
+                            };
+
+                            await searchAndRemoveBookmark(spaceFolder.id);
                         }
                     }
                 } else if (isPinned) {
@@ -794,27 +838,8 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
             });
             return;
         }
-
-        if (isBookmarkOnly) {
-            // Remove from bookmarks
-            const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-            if (bookmarkFolders.length > 0) {
-                const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                const activeSpace = spaces.find(s => s.id === activeSpaceId);
-
-                const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
-                console.log("spaceFolder", spaceFolder);
-                if (spaceFolder) {
-                    const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
-                    const bookmark = bookmarks.find(b => b.url === tab.url);
-                    if (bookmark) {
-                        console.log("removing bookmark", bookmark);
-                        await chrome.bookmarks.remove(bookmark.id);
-                        tabElement.remove();
-                    }
-                }
-            }
-        } else if (isPinned) {
+        
+        if (isPinned) {
             const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
             if (bookmarkFolders.length > 0) {
                 const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
