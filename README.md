@@ -4,6 +4,8 @@
 
 A Chrome extension that replicates Arc browser's tab management system, providing a vertical sidebar for efficient tab organization and management.
 
+![Demo](assets/extension.gif | height=400)
+
 ## Features
 
 - Vertical tab management
