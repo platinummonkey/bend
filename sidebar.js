@@ -130,7 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initSidebar() {
     console.log('Initializing sidebar...');
     try {
-        const tabGroups = await chrome.tabGroups.query({});
+        currentWindow = await chrome.windows.getCurrent({populate: false});
+
+        let tabGroups = await chrome.tabGroups.query({});
         let allTabs = await chrome.tabs.query({});
         console.log("tabGroups", tabGroups);
         console.log("allTabs", allTabs);
@@ -190,14 +192,22 @@ async function initSidebar() {
                 const defaultGroup = tabGroups.find(group => group.title === 'Home');
                 if (defaultGroup) {
                     console.log("found existing default group", defaultGroup);
-                    // Move ungrouped tabs to existing Default group
-                    await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id), groupId: defaultGroup.id});
+                    if (defaultGroup.windowId === currentWindow.id) {
+                        // Move ungrouped tabs to existing Default group
+                        await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id), groupId: defaultGroup.id});
+                    } else {
+                        // Create new Default group
+                        defaultGroupId = await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id)});
+                        await chrome.tabGroups.update(defaultGroupId, {title: 'Home'+currentWindow.id, color: 'grey'});
+                    }
                 } else {
                     // Create new Default group
                     defaultGroupId = await chrome.tabs.group({tabIds: ungroupedTabs.map(tab => tab.id)});
                     await chrome.tabGroups.update(defaultGroupId, {title: 'Home', color: 'grey'});
                 }
             }
+
+            tabGroups = await chrome.tabGroups.query({});
 
             // Load existing tab groups as spaces
             spaces = await Promise.all(tabGroups.map(async group => {
@@ -229,7 +239,14 @@ async function initSidebar() {
             }));
             spaces.forEach(space => createSpaceElement(space));
             saveSpaces();
-            setActiveSpace(spaces[0].id);
+
+            let activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTabs.length > 0) {
+                const activeTab = activeTabs[0];
+                setActiveSpace(activeTab.groupId);
+            } else {
+                setActiveSpace(defaultGroupId ?? spaces[0].id);
+            }
         }
     } catch (error) {
         console.error('Error initializing sidebar:', error);
@@ -258,8 +275,6 @@ async function initSidebar() {
     });
     document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
     newTabBtn.addEventListener('click', createNewTab);
-
-    currentWindow = await chrome.windows.getCurrent({populate: false});
 }
 
 function createSpaceElement(space) {
@@ -1076,47 +1091,49 @@ function handleTabCreated(tab) {
         console.log('Skipping tab creation handler - space is being created');
         return;
     }
-    if (tab.windowId !== currentWindow.id) {
-        console.log('New tab is in a different window, ignoring...');
-        return;
-    }
-
-    console.log('Tab created:', tab.id);
-    // Always ensure we have the current activeSpaceId
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        try {
-            // Get the current active tab's group ID
-            // const currentGroupId = await chrome.tabs.group({ tabIds: tab.id });
-            const space = spaces.find(s => s.id === activeSpaceId);
-
-            if (space) {
-                // Move the tab to the active space's group
-                await chrome.tabs.group({ tabIds: tab.id, groupId: space.id });
-
-                // Add the new tab to the current space's temporary tabs
-                space.temporaryTabs.push(tab.id);
-                saveSpaces();
-
-                // Create and add the tab element to the temporary container
-                const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
-                if (spaceElement) {
-                    const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
-                    const tabElement = createTabElement(tab);
-                    tempContainer.appendChild(tabElement);
-
-                    // Update active state of all tabs
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
-
-                    tabElement.classList.add('active');
-                }
-
-                // switch to the new tab
-                await chrome.tabs.update(tab.id, { active: true })
-            }
-        } catch (error) {
-            console.error('Error handling new tab:', error);
+    chrome.windows.getCurrent({populate: false}, async (currentWindow) => {
+        if (tab.windowId !== currentWindow.id) {
+            console.log('New tab is in a different window, ignoring...');
+            return;
         }
+
+        console.log('Tab created:', tab.id);
+        // Always ensure we have the current activeSpaceId
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+            try {
+                // Get the current active tab's group ID
+                // const currentGroupId = await chrome.tabs.group({ tabIds: tab.id });
+                const space = spaces.find(s => s.id === activeSpaceId);
+
+                if (space) {
+                    // Move the tab to the active space's group
+                    await chrome.tabs.group({ tabIds: tab.id, groupId: space.id });
+
+                    // Add the new tab to the current space's temporary tabs
+                    space.temporaryTabs.push(tab.id);
+                    saveSpaces();
+
+                    // Create and add the tab element to the temporary container
+                    const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
+                    if (spaceElement) {
+                        const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
+                        const tabElement = createTabElement(tab);
+                        tempContainer.appendChild(tabElement);
+
+                        // Update active state of all tabs
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+
+                        tabElement.classList.add('active');
+                    }
+
+                    // switch to the new tab
+                    await chrome.tabs.update(tab.id, { active: true })
+                }
+            } catch (error) {
+                console.error('Error handling new tab:', error);
+            }
+        });
     });
 }
 
@@ -1125,90 +1142,88 @@ function handleTabUpdate(tabId, changeInfo, tab) {
     if (isOpeningBookmark) {
         return;
     }
-    if (tab.windowId !== currentWindow.id) {
-        console.log('New tab is in a different window, ignoring...');
-        return;
-    }
-    console.log('Tab updated:', tabId, changeInfo, spaces);
+    chrome.windows.getCurrent({populate: false}, async (currentWindow) => {
+        if (tab.windowId !== currentWindow.id) {
+            console.log('New tab is in a different window, ignoring...');
+            return;
+        }
+        console.log('Tab updated:', tabId, changeInfo, spaces);
 
-    // Handle tab pinning state changes
-    if (changeInfo.pinned !== undefined) {
-        if (changeInfo.pinned) {
-            // Handle pinning: Remove from temporary tabs
-            const space = spaces.find(s => s.temporaryTabs.includes(tabId));
-            if (space) {
-                space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
-                saveSpaces();
+        // Handle tab pinning state changes
+        if (changeInfo.pinned !== undefined) {
+            if (changeInfo.pinned) {
+                // Handle pinning: Remove from temporary tabs
+                const space = spaces.find(s => s.temporaryTabs.includes(tabId));
+                if (space) {
+                    space.temporaryTabs = space.temporaryTabs.filter(id => id !== tabId);
+                    saveSpaces();
 
-                // Remove the tab element from temporary section
-                const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-                if (tabElement) {
-                    tabElement.remove();
+                    // Remove the tab element from temporary section
+                    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+                    if (tabElement) {
+                        tabElement.remove();
+                    }
+                }
+            } else {
+                // Handle unpinning: Add to temporary tabs of current space and group with current space's tabs
+                const space = spaces.find(s => s.id === activeSpaceId);
+                console.log("handle unpinning");
+                if (space && !space.temporaryTabs.includes(tabId)) {
+                    console.log("found space");
+                    // Add to current space's tab group
+                    chrome.tabs.group({ tabIds: tabId, groupId: space.id });
+                    space.temporaryTabs.push(tabId);
+                    saveSpaces();
+
+                    // Add the tab element to temporary section
+                    const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
+                    if (spaceElement) {
+                        console.log("adding tab to temp");
+                        const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
+                        const tabElement = createTabElement(tab);
+                        tempContainer.appendChild(tabElement);
+                    }
                 }
             }
-        } else {
-            // Handle unpinning: Add to temporary tabs of current space and group with current space's tabs
-            const space = spaces.find(s => s.id === activeSpaceId);
-            console.log("handle unpinning");
-            if (space && !space.temporaryTabs.includes(tabId)) {
-                console.log("found space");
-                // Add to current space's tab group
-                chrome.tabs.group({ tabIds: tabId, groupId: space.id });
-                space.temporaryTabs.push(tabId);
-                saveSpaces();
+            // Update pinned favicons for both pinning and unpinning
+            updatePinnedFavicons();
+        }
 
-                // Add the tab element to temporary section
-                const spaceElement = document.querySelector(`[data-space-id="${activeSpaceId}"]`);
-                if (spaceElement) {
-                    console.log("adding tab to temp");
-                    const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
-                    const tabElement = createTabElement(tab);
-                    tempContainer.appendChild(tabElement);
+        // Update tab element if it exists
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tabElement) {
+            if (changeInfo.title) {
+                tabElement.querySelector('.tab-title').textContent = changeInfo.title;
+                // Update bookmark title if this is a pinned tab
+                if (tabElement.closest('[data-tab-type="pinned"]')) {
+                    updateBookmarkForTab(tab);
+                }
+            }
+            if (changeInfo.favIconUrl) {
+                tabElement.querySelector('.tab-favicon').src = changeInfo.favIconUrl || 'assets/default_icon.png';
+            }
+            if (changeInfo.url) {
+                // Update bookmark URL if this is a pinned tab
+                if (tabElement.closest('[data-tab-type="pinned"]')) {
+                    updateBookmarkForTab(tab);
+                }
+            }
+            // Update active state when tab's active state changes
+            if (changeInfo.active !== undefined) {
+                if (changeInfo.active) {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+
+                    // Add active class to this tab
+                    tabElement.classList.add('active');
                 }
             }
         }
-        // Update pinned favicons for both pinning and unpinning
-        updatePinnedFavicons();
-    }
-
-    // Update tab element if it exists
-    const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-    if (tabElement) {
-        if (changeInfo.title) {
-            tabElement.querySelector('.tab-title').textContent = changeInfo.title;
-            // Update bookmark title if this is a pinned tab
-            if (tabElement.closest('[data-tab-type="pinned"]')) {
-                updateBookmarkForTab(tab);
-            }
-        }
-        if (changeInfo.favIconUrl) {
-            tabElement.querySelector('.tab-favicon').src = changeInfo.favIconUrl || 'assets/default_icon.png';
-        }
-        if (changeInfo.url) {
-            // Update bookmark URL if this is a pinned tab
-            if (tabElement.closest('[data-tab-type="pinned"]')) {
-                updateBookmarkForTab(tab);
-            }
-        }
-        // Update active state when tab's active state changes
-        if (changeInfo.active !== undefined) {
-            if (changeInfo.active) {
-                // Remove active class from all tabs
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
-
-                // Add active class to this tab
-                tabElement.classList.add('active');
-            }
-        }
-    }
+    });
 }
 
 async function handleTabRemove(tabId) {
-    if (tab.windowId !== currentWindow.id) {
-        console.log('New tab is in a different window, ignoring...');
-        return;
-    }
     console.log('Tab removed:', tabId);
     // Get tab element before removing it
     const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
@@ -1249,84 +1264,91 @@ function handleTabMove(tabId, moveInfo) {
     if (isOpeningBookmark) {
         return;
     }
-    if (tab.windowId !== currentWindow.id) {
-        console.log('New tab is in a different window, ignoring...');
-        return;
-    }
-    console.log('Tab moved:', tabId, moveInfo);
+    chrome.windows.getCurrent({populate: false}, async (currentWindow) => {
 
-    // Get the tab's current information
-    chrome.tabs.get(tabId, async (tab) => {
-        const newGroupId = tab.groupId;
-        console.log('Tab moved to group:', newGroupId);
+        if (tab.windowId !== currentWindow.id) {
+            console.log('New tab is in a different window, ignoring...');
+            return;
+        }
+        console.log('Tab moved:', tabId, moveInfo);
 
-        // Find the source and destination spaces
-        const sourceSpace = spaces.find(s =>
-            s.temporaryTabs.includes(tabId) || s.spaceBookmarks.includes(tabId)
-        );
-        const destSpace = spaces.find(s => s.id === newGroupId);
+        // Get the tab's current information
+        chrome.tabs.get(tabId, async (tab) => {
+            const newGroupId = tab.groupId;
+            console.log('Tab moved to group:', newGroupId);
 
-        if (sourceSpace && destSpace && sourceSpace.id !== destSpace.id) {
-            console.log('Moving tab between spaces:', sourceSpace.name, '->', destSpace.name);
+            // Find the source and destination spaces
+            const sourceSpace = spaces.find(s =>
+                s.temporaryTabs.includes(tabId) || s.spaceBookmarks.includes(tabId)
+            );
+            const destSpace = spaces.find(s => s.id === newGroupId);
 
-            // Remove from source space
-            sourceSpace.temporaryTabs = sourceSpace.temporaryTabs.filter(id => id !== tabId);
-            sourceSpace.spaceBookmarks = sourceSpace.spaceBookmarks.filter(id => id !== tabId);
+            if (sourceSpace && destSpace && sourceSpace.id !== destSpace.id) {
+                console.log('Moving tab between spaces:', sourceSpace.name, '->', destSpace.name);
 
-            // Add to destination space's temporary tabs
-            if (!destSpace.temporaryTabs.includes(tabId)) {
-                destSpace.temporaryTabs.push(tabId);
-            }
+                // Remove from source space
+                sourceSpace.temporaryTabs = sourceSpace.temporaryTabs.filter(id => id !== tabId);
+                sourceSpace.spaceBookmarks = sourceSpace.spaceBookmarks.filter(id => id !== tabId);
 
-            // Update the DOM
-            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-            if (tabElement) {
-                const destSpaceElement = document.querySelector(`[data-space-id="${destSpace.id}"]`);
-                if (destSpaceElement) {
-                    const destTempContainer = destSpaceElement.querySelector('[data-tab-type="temporary"]');
-                    if (destTempContainer) {
-                        destTempContainer.appendChild(tabElement);
+                // Add to destination space's temporary tabs
+                if (!destSpace.temporaryTabs.includes(tabId)) {
+                    destSpace.temporaryTabs.push(tabId);
+                }
+
+                // Update the DOM
+                const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+                if (tabElement) {
+                    const destSpaceElement = document.querySelector(`[data-space-id="${destSpace.id}"]`);
+                    if (destSpaceElement) {
+                        const destTempContainer = destSpaceElement.querySelector('[data-tab-type="temporary"]');
+                        if (destTempContainer) {
+                            destTempContainer.appendChild(tabElement);
+                        }
+                    }
+                }
+
+                saveSpaces();
+            } else {
+                // Handle regular tab position updates within the same space
+                const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+                if (tabElement) {
+                    const container = tabElement.parentElement;
+                    const tabs = Array.from(container.children);
+                    const currentIndex = tabs.indexOf(tabElement);
+                    if (currentIndex !== moveInfo.toIndex) {
+                        container.insertBefore(tabElement, container.children[moveInfo.toIndex]);
                     }
                 }
             }
-
-            saveSpaces();
-        } else {
-            // Handle regular tab position updates within the same space
-            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-            if (tabElement) {
-                const container = tabElement.parentElement;
-                const tabs = Array.from(container.children);
-                const currentIndex = tabs.indexOf(tabElement);
-                if (currentIndex !== moveInfo.toIndex) {
-                    container.insertBefore(tabElement, container.children[moveInfo.toIndex]);
-                }
-            }
-        }
+        });
     });
 }
 
 function handleTabActivated(activeInfo) {
-    if (tab.windowId !== currentWindow.id) {
-        console.log('New tab is in a different window, ignoring...');
-        return;
-    }
-    console.log('Tab activated:', activeInfo.tabId);
-    // Find which space contains this tab
-    const spaceWithTab = spaces.find(space =>
-        space.spaceBookmarks.includes(activeInfo.tabId) ||
-        space.temporaryTabs.includes(activeInfo.tabId)
-    );
+    chrome.windows.getCurrent({populate: false}, async (currentWindow) => {
 
-    if (spaceWithTab && spaceWithTab.id !== activeSpaceId) {
-        // Switch to the space containing the tab
-        setActiveSpace(spaceWithTab.id);
-    } else {
-        // Just update the active state of tabs in the current space
-        document.querySelectorAll('.tab').forEach(t => {
-            t.classList.toggle('active', t.dataset.tabId === String(activeInfo.tabId));
-        });
-    }
+        if (activeInfo.windowId !== currentWindow.id) {
+            console.log('New tab is in a different window, ignoring...');
+            return;
+        }
+
+        console.log('Tab activated:', activeInfo);
+        // Find which space contains this tab
+        const spaceWithTab = spaces.find(space =>
+            space.spaceBookmarks.includes(activeInfo.tabId) ||
+            space.temporaryTabs.includes(activeInfo.tabId)
+        );
+
+        if (spaceWithTab && spaceWithTab.id !== activeSpaceId) {
+            // Switch to the space containing the tab
+            setActiveSpace(spaceWithTab.id);
+        } else {
+            // Just update the active state of tabs in the current space
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tabId === String(activeInfo.tabId));
+            });
+        }
+    });
 }
 
 function deleteSpace(spaceId) {
