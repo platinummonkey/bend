@@ -33,10 +33,10 @@ function generateUUID() {
 }
 
 // Helper function to fetch favicon
-function faviconURL(u) {
+function faviconURL(u, size = "16") {
   const url = new URL(chrome.runtime.getURL("/_favicon/"));
   url.searchParams.set("pageUrl", u);
-  url.searchParams.set("size", "16");
+  url.searchParams.set("size", size);
   return url.toString();
 }
 
@@ -86,7 +86,7 @@ async function updatePinnedFavicons() {
             faviconElement.dataset.tabId = tab.id;
 
             const img = document.createElement('img');
-            img.src = faviconURL(tab.url);
+            img.src = faviconURL(tab.url, "96");
             img.alt = tab.title;
 
             faviconElement.appendChild(img);
@@ -258,7 +258,12 @@ async function initSidebar() {
             let activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
             if (activeTabs.length > 0) {
                 const activeTab = activeTabs[0];
-                setActiveSpace(activeTab.groupId);
+                if (activeTab.pinned) {
+                    setActiveSpace(spaces[0].id, !activeTab.pinned);
+                    updatePinnedFavicons();
+                } else {
+                    setActiveSpace(activeTab.groupId);
+                }
             } else {
                 setActiveSpace(defaultGroupId ?? spaces[0].id);
             }
@@ -380,20 +385,22 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element
 }
 
-function setActiveSpace(spaceId) {
+function setActiveSpace(spaceId, updateTab = true) {
     console.log('Setting active space:', spaceId);
 
     // Centralize logic in our new helper function
     activateSpaceInDOM(spaceId);
 
     // Get all tabs in the space and activate the last one
-    chrome.tabs.query({ groupId: spaceId }, tabs => {
-        if (tabs.length > 0) {
-            const lastTab = tabs[tabs.length - 1];
-            chrome.tabs.update(lastTab.id, { active: true });
-            activateTabInDOM(lastTab.id);
-        }
-    });
+    if (updateTab) {
+        chrome.tabs.query({ groupId: spaceId }, tabs => {
+            if (tabs.length > 0) {
+                const lastTab = tabs[tabs.length - 1];
+                chrome.tabs.update(lastTab.id, { active: true });
+                activateTabInDOM(lastTab.id);
+            }
+        });
+    }
 }
 
 function saveSpaces() {
@@ -824,7 +831,7 @@ console.log('Closing tab:', tab);
         });
         return;
     }
-    
+
     if (isPinned) {
         const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
         if (bookmarkFolders.length > 0) {
