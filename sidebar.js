@@ -43,22 +43,22 @@ function faviconURL(u, size = "16") {
 // Helper function to update bookmark for a tab
 async function updateBookmarkForTab(tab) {
     console.log("updating tab", tab);
-    const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-    if (bookmarkFolders.length > 0) {
-        const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-        for (const spaceFolder of spaceFolders) {
-            console.log("looking for space folder", spaceFolder);
-            const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
-            console.log("looking for bookmarks", bookmarks);
-            const bookmark = bookmarks.find(b => b.url === tab.url);
-            if (bookmark) {
-                await chrome.bookmarks.update(bookmark.id, {
-                    title: tab.title,
-                    url: tab.url
-                });
-            }
+    const arcifyFolder = await getOrCreateArcifyFolder();
+    const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+
+    for (const spaceFolder of spaceFolders) {
+        console.log("looking for space folder", spaceFolder);
+        const bookmarks = await chrome.bookmarks.getChildren(spaceFolder.id);
+        console.log("looking for bookmarks", bookmarks);
+        const bookmark = bookmarks.find(b => b.url === tab.url);
+        if (bookmark) {
+            await chrome.bookmarks.update(bookmark.id, {
+                title: tab.title,
+                url: tab.url
+            });
         }
     }
+    
 }
 
 console.log("hi");
@@ -152,13 +152,7 @@ async function initSidebar() {
         console.log("tabGroups", tabGroups);
         console.log("allTabs", allTabs);
         // Create bookmarks folder for spaces if it doesn't exist
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-        let spacesFolder;
-        if (bookmarkFolders.length === 0) {
-            spacesFolder = await chrome.bookmarks.create({title: 'Arcify'});
-        } else {
-            spacesFolder = bookmarkFolders[0];
-        }
+        const spacesFolder = await getOrCreateArcifyFolder();
 
         if (tabGroups.length === 0) {
             let currentTabs = allTabs.filter(tab => tab.id && !tab.pinned) ?? [];
@@ -606,134 +600,131 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
     var bookmarkedTabURLs = [];
     try {
         const tabs = await chrome.tabs.query({});
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
 
-        if (bookmarkFolders.length > 0) {
-            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-            const spaceFolder = spaceFolders.find(f => f.title == space.name);
+        const arcifyFolder = await getOrCreateArcifyFolder();
+        const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+        const spaceFolder = spaceFolders.find(f => f.title == space.name);
 
-            if (spaceFolder) {
-                // Recursive function to process bookmarks and folders
-                async function processBookmarkNode(node, container) {
-                    const bookmarks = await chrome.bookmarks.getChildren(node.id);
-                    console.log('Processing bookmarks:', bookmarks);
-                    const processedUrls = new Set();
+        if (spaceFolder) {
+            // Recursive function to process bookmarks and folders
+            async function processBookmarkNode(node, container) {
+                const bookmarks = await chrome.bookmarks.getChildren(node.id);
+                console.log('Processing bookmarks:', bookmarks);
+                const processedUrls = new Set();
 
-                    for (const item of bookmarks) {
-                        if (!item.url) {
-                            // This is a folder
-                            const folderTemplate = document.getElementById('folderTemplate');
-                            const newFolder = folderTemplate.content.cloneNode(true);
-                            const folderElement = newFolder.querySelector('.folder');
-                            const folderHeader = folderElement.querySelector('.folder-header');
-                            const folderIcon = folderElement.querySelector('.folder-icon');
-                            const folderTitle = folderElement.querySelector('.folder-title');
-                            const folderNameInput = folderElement.querySelector('.folder-name');
-                            const folderContent = folderElement.querySelector('.folder-content');
-                            const folderToggle = folderElement.querySelector('.folder-toggle');
-                            const placeHolderElement = folderElement.querySelector('.tab-placeholder');
-                            // Set up folder toggle functionality
-                            // Add context menu for folder
-                            folderElement.addEventListener('contextmenu', async (e) => {
-                                e.preventDefault();
-                                const contextMenu = document.createElement('div');
-                                contextMenu.classList.add('context-menu');
-                                contextMenu.style.position = 'fixed';
-                                contextMenu.style.left = `${e.clientX}px`;
-                                contextMenu.style.top = `${e.clientY}px`;
+                for (const item of bookmarks) {
+                    if (!item.url) {
+                        // This is a folder
+                        const folderTemplate = document.getElementById('folderTemplate');
+                        const newFolder = folderTemplate.content.cloneNode(true);
+                        const folderElement = newFolder.querySelector('.folder');
+                        const folderHeader = folderElement.querySelector('.folder-header');
+                        const folderIcon = folderElement.querySelector('.folder-icon');
+                        const folderTitle = folderElement.querySelector('.folder-title');
+                        const folderNameInput = folderElement.querySelector('.folder-name');
+                        const folderContent = folderElement.querySelector('.folder-content');
+                        const folderToggle = folderElement.querySelector('.folder-toggle');
+                        const placeHolderElement = folderElement.querySelector('.tab-placeholder');
+                        // Set up folder toggle functionality
+                        // Add context menu for folder
+                        folderElement.addEventListener('contextmenu', async (e) => {
+                            e.preventDefault();
+                            const contextMenu = document.createElement('div');
+                            contextMenu.classList.add('context-menu');
+                            contextMenu.style.position = 'fixed';
+                            contextMenu.style.left = `${e.clientX}px`;
+                            contextMenu.style.top = `${e.clientY}px`;
 
-                                const deleteOption = document.createElement('div');
-                                deleteOption.classList.add('context-menu-item');
-                                deleteOption.textContent = 'Delete Folder';
-                                deleteOption.addEventListener('click', async () => {
-                                    if (confirm('Are you sure you want to delete this folder and all its contents?')) {
-                                        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-                                        if (bookmarkFolders.length > 0) {
-                                            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                                            const spaceFolder = spaceFolders.find(f => f.title === space.name);
-                                            if (spaceFolder) {
-                                                const folders = await chrome.bookmarks.getChildren(spaceFolder.id);
-                                                const folder = folders.find(f => f.title === item.title);
-                                                if (folder) {
-                                                    await chrome.bookmarks.removeTree(folder.id);
-                                                    folderElement.remove();
-                                                }
-                                            }
+                            const deleteOption = document.createElement('div');
+                            deleteOption.classList.add('context-menu-item');
+                            deleteOption.textContent = 'Delete Folder';
+                            deleteOption.addEventListener('click', async () => {
+                                if (confirm('Are you sure you want to delete this folder and all its contents?')) {
+                                    const arcifyFolder = await getOrCreateArcifyFolder();
+                                    const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+                                    const spaceFolder = spaceFolders.find(f => f.title === space.name);
+                                    if (spaceFolder) {
+                                        const folders = await chrome.bookmarks.getChildren(spaceFolder.id);
+                                        const folder = folders.find(f => f.title === item.title);
+                                        if (folder) {
+                                            await chrome.bookmarks.removeTree(folder.id);
+                                            folderElement.remove();
                                         }
                                     }
+                                }
+                                contextMenu.remove();
+                            });
+
+                            contextMenu.appendChild(deleteOption);
+                            document.body.appendChild(contextMenu);
+
+                            // Close context menu when clicking outside
+                            const closeContextMenu = (e) => {
+                                if (!contextMenu.contains(e.target)) {
                                     contextMenu.remove();
-                                });
+                                    document.removeEventListener('click', closeContextMenu);
+                                }
+                            };
+                            document.addEventListener('click', closeContextMenu);
+                        });
 
-                                contextMenu.appendChild(deleteOption);
-                                document.body.appendChild(contextMenu);
+                        folderHeader.addEventListener('click', () => {
+                            folderElement.classList.toggle('collapsed');
+                            folderContent.classList.toggle('collapsed');
+                            folderToggle.classList.toggle('collapsed');
+                            folderIcon.innerHTML = folderElement.classList.contains('collapsed') ? FOLDER_CLOSED_ICON : FOLDER_OPEN_ICON;
+                        });
 
-                                // Close context menu when clicking outside
-                                const closeContextMenu = (e) => {
-                                    if (!contextMenu.contains(e.target)) {
-                                        contextMenu.remove();
-                                        document.removeEventListener('click', closeContextMenu);
-                                    }
+                        folderNameInput.value = item.title;
+                        folderNameInput.readOnly = true;
+                        folderNameInput.disabled = true;
+                        folderNameInput.classList.toggle('hidden');
+                        folderTitle.innerHTML = item.title;
+                        folderTitle.classList.toggle('hidden');
+                        placeHolderElement.classList.remove('hidden');
+
+                        container.appendChild(folderElement);
+
+                        // Recursively process the folder's contents
+                        await processBookmarkNode(item, folderElement.querySelector('.folder-content'));
+                    } else {
+                        // This is a bookmark
+                        if (!processedUrls.has(item.url)) {
+                            const existingTab = tabs.find(t => t.url === item.url);
+                            if (existingTab) {
+                                console.log('Creating UI element for active bookmark:', existingTab);
+                                bookmarkedTabURLs.push(existingTab.url);
+                                const tabElement = createTabElement(existingTab, true);
+                                container.appendChild(tabElement);
+                            } else {
+                                // Create UI element for inactive bookmark
+                                const bookmarkTab = {
+                                    id: null,
+                                    title: item.title,
+                                    url: item.url,
+                                    favIconUrl: null,
+                                    spaceName: space.name
                                 };
-                                document.addEventListener('click', closeContextMenu);
-                            });
-
-                            folderHeader.addEventListener('click', () => {
-                                folderElement.classList.toggle('collapsed');
-                                folderContent.classList.toggle('collapsed');
-                                folderToggle.classList.toggle('collapsed');
-                                folderIcon.innerHTML = folderElement.classList.contains('collapsed') ? FOLDER_CLOSED_ICON : FOLDER_OPEN_ICON;
-                            });
-
-                            folderNameInput.value = item.title;
-                            folderNameInput.readOnly = true;
-                            folderNameInput.disabled = true;
-                            folderNameInput.classList.toggle('hidden');
-                            folderTitle.innerHTML = item.title;
-                            folderTitle.classList.toggle('hidden');
-                            placeHolderElement.classList.remove('hidden');
-
-                            container.appendChild(folderElement);
-
-                            // Recursively process the folder's contents
-                            await processBookmarkNode(item, folderElement.querySelector('.folder-content'));
-                        } else {
-                            // This is a bookmark
-                            if (!processedUrls.has(item.url)) {
-                                const existingTab = tabs.find(t => t.url === item.url);
-                                if (existingTab) {
-                                    console.log('Creating UI element for active bookmark:', existingTab);
-                                    bookmarkedTabURLs.push(existingTab.url);
-                                    const tabElement = createTabElement(existingTab, true);
-                                    container.appendChild(tabElement);
-                                } else {
-                                    // Create UI element for inactive bookmark
-                                    const bookmarkTab = {
-                                        id: null,
-                                        title: item.title,
-                                        url: item.url,
-                                        favIconUrl: null,
-                                        spaceName: space.name
-                                    };
-                                    console.log('Creating UI element for inactive bookmark:', item.title);
-                                    const tabElement = createTabElement(bookmarkTab, true, true);
-                                    bookmarkedTabURLs.push(item.url);
-                                    container.appendChild(tabElement);
-                                }
-                                processedUrls.add(item.url);
-                                const placeHolderElement = container.querySelector('.tab-placeholder');
-                                if (placeHolderElement) {
-                                    placeHolderElement.classList.add('hidden');
-                                }
+                                console.log('Creating UI element for inactive bookmark:', item.title);
+                                const tabElement = createTabElement(bookmarkTab, true, true);
+                                bookmarkedTabURLs.push(item.url);
+                                container.appendChild(tabElement);
+                            }
+                            processedUrls.add(item.url);
+                            const placeHolderElement = container.querySelector('.tab-placeholder');
+                            if (placeHolderElement) {
+                                placeHolderElement.classList.add('hidden');
                             }
                         }
                     }
-                    return bookmarkedTabURLs;
                 }
-
-                // Process the space folder and get all bookmarked URLs
-                bookmarkedTabURLs = await processBookmarkNode(spaceFolder, pinnedContainer);
+                return bookmarkedTabURLs;
             }
+
+            // Process the space folder and get all bookmarked URLs
+            bookmarkedTabURLs = await processBookmarkNode(spaceFolder, pinnedContainer);
         }
+        
 
         // Load temporary tabs
         space.temporaryTabs.forEach(tabId => {
@@ -757,34 +748,33 @@ console.log('Closing tab:', tab);
 
     if (isBookmarkOnly) {
         // Remove from bookmarks
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-        if (bookmarkFolders.length > 0) {
-            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-            const activeSpace = spaces.find(s => s.id === activeSpaceId);
+        const arcifyFolder = await getOrCreateArcifyFolder();
+        const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+        const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
-            const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
-            console.log("spaceFolder", spaceFolder);
-            if (spaceFolder) {
-                const searchAndRemoveBookmark = async (folderId) => {
-                    const items = await chrome.bookmarks.getChildren(folderId);
-                    for (const item of items) {
-                        if (item.url === tab.url) {
-                            console.log("removing bookmark", item);
-                            await chrome.bookmarks.remove(item.id);
-                            tabElement.remove();
-                            return true; // Bookmark found and removed
-                        } else if (!item.url) {
-                            // This is a folder, search recursively
-                            const found = await searchAndRemoveBookmark(item.id);
-                            if (found) return true;
-                        }
+        const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
+        console.log("spaceFolder", spaceFolder);
+        if (spaceFolder) {
+            const searchAndRemoveBookmark = async (folderId) => {
+                const items = await chrome.bookmarks.getChildren(folderId);
+                for (const item of items) {
+                    if (item.url === tab.url) {
+                        console.log("removing bookmark", item);
+                        await chrome.bookmarks.remove(item.id);
+                        tabElement.remove();
+                        return true; // Bookmark found and removed
+                    } else if (!item.url) {
+                        // This is a folder, search recursively
+                        const found = await searchAndRemoveBookmark(item.id);
+                        if (found) return true;
                     }
-                    return false;
-                };
+                }
+                return false;
+            };
 
-                await searchAndRemoveBookmark(spaceFolder.id);
-            }
+            await searchAndRemoveBookmark(spaceFolder.id);
         }
+        
         return;
     }
 
@@ -796,56 +786,52 @@ console.log('Closing tab:', tab);
         await createNewTab(async () => {
             if (isBookmarkOnly) {
                 // Remove from bookmarks
-                const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-                if (bookmarkFolders.length > 0) {
-                    const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                    const activeSpace = spaces.find(s => s.id === activeSpaceId);
+                const arcifyFolder = await getOrCreateArcifyFolder();
+                const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+                const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
-                    const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
-                    console.log("spaceFolder", spaceFolder);
-                    if (spaceFolder) {
-                        const searchAndRemoveBookmark = async (folderId) => {
-                            const items = await chrome.bookmarks.getChildren(folderId);
-                            for (const item of items) {
-                                if (item.url === tab.url) {
-                                    console.log("removing bookmark", item);
-                                    await chrome.bookmarks.remove(item.id);
-                                    tabElement.remove();
-                                    return true; // Bookmark found and removed
-                                } else if (!item.url) {
-                                    // This is a folder, search recursively
-                                    const found = await searchAndRemoveBookmark(item.id);
-                                    if (found) return true;
-                                }
+                const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
+                console.log("spaceFolder", spaceFolder);
+                if (spaceFolder) {
+                    const searchAndRemoveBookmark = async (folderId) => {
+                        const items = await chrome.bookmarks.getChildren(folderId);
+                        for (const item of items) {
+                            if (item.url === tab.url) {
+                                console.log("removing bookmark", item);
+                                await chrome.bookmarks.remove(item.id);
+                                tabElement.remove();
+                                return true; // Bookmark found and removed
+                            } else if (!item.url) {
+                                // This is a folder, search recursively
+                                const found = await searchAndRemoveBookmark(item.id);
+                                if (found) return true;
                             }
-                            return false;
-                        };
+                        }
+                        return false;
+                    };
 
-                        await searchAndRemoveBookmark(spaceFolder.id);
-                    }
+                    await searchAndRemoveBookmark(spaceFolder.id);
                 }
             } else if (isPinned) {
-                const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-                if (bookmarkFolders.length > 0) {
-                    const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-                    const activeSpace = spaces.find(s => s.id === activeSpaceId);
+                const arcifyFolder = await getOrCreateArcifyFolder();
+                const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+                const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
-                    const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
-                    console.log("spaceFolder", spaceFolder);
-                    if (spaceFolder) {
-                        const bookmarkTab = {
-                            id: null,
-                            title: tab.title,
-                            url: tab.url,
-                            favIconUrl: tab.favIconUrl,
-                            spaceName: tab.spaceName
-                        };
-                        const inactiveTabElement = createTabElement(bookmarkTab, true, true);
-                        tabElement.replaceWith(inactiveTabElement);
+                const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
+                console.log("spaceFolder", spaceFolder);
+                if (spaceFolder) {
+                    const bookmarkTab = {
+                        id: null,
+                        title: tab.title,
+                        url: tab.url,
+                        favIconUrl: tab.favIconUrl,
+                        spaceName: tab.spaceName
+                    };
+                    const inactiveTabElement = createTabElement(bookmarkTab, true, true);
+                    tabElement.replaceWith(inactiveTabElement);
 
-                        chrome.tabs.remove(tab.id);
-                        return;
-                    }
+                    chrome.tabs.remove(tab.id);
+                    return;
                 }
             } else {
                 chrome.tabs.remove(tab.id);
@@ -855,27 +841,25 @@ console.log('Closing tab:', tab);
     }
 
     if (isPinned) {
-        const bookmarkFolders = await chrome.bookmarks.search({title: 'Arcify'});
-        if (bookmarkFolders.length > 0) {
-            const spaceFolders = await chrome.bookmarks.getChildren(bookmarkFolders[0].id);
-            const activeSpace = spaces.find(s => s.id === activeSpaceId);
+        const arcifyFolder = await getOrCreateArcifyFolder();
+        const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+        const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
-            const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
-            console.log("spaceFolder", spaceFolder);
-            if (spaceFolder) {
-                const bookmarkTab = {
-                    id: null,
-                    title: tab.title,
-                    url: tab.url,
-                    favIconUrl: tab.favIconUrl,
-                    spaceName: tab.spaceName
-                };
-                const inactiveTabElement = createTabElement(bookmarkTab, true, true);
-                tabElement.replaceWith(inactiveTabElement);
+        const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
+        console.log("spaceFolder", spaceFolder);
+        if (spaceFolder) {
+            const bookmarkTab = {
+                id: null,
+                title: tab.title,
+                url: tab.url,
+                favIconUrl: tab.favIconUrl,
+                spaceName: tab.spaceName
+            };
+            const inactiveTabElement = createTabElement(bookmarkTab, true, true);
+            tabElement.replaceWith(inactiveTabElement);
 
-                chrome.tabs.remove(tab.id);
-                return;
-            }
+            chrome.tabs.remove(tab.id);
+            return;
         }
     } else {
         chrome.tabs.remove(tab.id);
@@ -1309,7 +1293,7 @@ function handleTabActivated(activeInfo) {
     });
 }
 
-function deleteSpace(spaceId) {
+async function deleteSpace(spaceId) {
     console.log('Deleting space:', spaceId);
     const space = spaces.find(s => s.id === spaceId);
     if (space) {
@@ -1331,6 +1315,12 @@ function deleteSpace(spaceId) {
         if (activeSpaceId === spaceId && spaces.length > 0) {
             setActiveSpace(spaces[0].id);
         }
+
+        // Delete bookmark folder for this space
+        const arcifyFolder = await getOrCreateArcifyFolder();
+        const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+        const spaceFolder = spaceFolders.find(f => f.title === space.name);
+        await chrome.bookmarks.removeTree(spaceFolder.id);
 
         // Save changes
         saveSpaces();
