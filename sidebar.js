@@ -1450,10 +1450,18 @@ function activateSpaceInDOM(spaceId) {
 }
 
 function setupDOMElements() {
+    const spaceSwitcher = document.getElementById('spaceSwitcher');
+    spaceSwitcher.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        
+        const scrollAmount = event.deltaY;
+        
+        spaceSwitcher.scrollLeft += scrollAmount;
+    }, { passive: false });
+
     // Add event listeners for buttons
     addSpaceBtn.addEventListener('click', () => {
         const inputContainer = document.getElementById('addSpaceInputContainer');
-        const spaceSwitcher = document.getElementById('spaceSwitcher');
         const spaceNameInput = document.getElementById('newSpaceName');
         const isInputVisible = inputContainer.classList.contains('visible');
 
