@@ -524,6 +524,7 @@ h3 {
     overflow: hidden;
     text-overflow: ellipsis;
     flex: none;
+    transition: background-color 0.3s;
 }
 
 .space-switcher button:hover {
