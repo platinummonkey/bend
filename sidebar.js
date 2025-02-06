@@ -223,32 +223,60 @@ async function initSidebar() {
             spaces = await Promise.all(tabGroups.map(async group => {
                 const tabs = await chrome.tabs.query({groupId: group.id});
                 console.log("processing group", group);
-                const spaceBookmarks = result.spaces?.find(s => s.name == group.title)?.spaceBookmarks || [];
-                console.log("space bookmarks", spaceBookmarks);
+
+                const mainFolder = await chrome.bookmarks.getSubTree(spacesFolder.id);
+                const bookmarkFolder = mainFolder[0].children?.find(f => f.title == group.title);
+                console.log("looking for existing folder", group.title, mainFolder, bookmarkFolder);
+                let spaceBookmarks = [];
+                if (!bookmarkFolder) {
+                    console.log("creating new folder", group.title)
+                    await chrome.bookmarks.create({
+                        parentId: spacesFolder.id,
+                        title: group.title
+                    });
+                } else {
+                    console.log("found folder", group.title)
+                    // Loop over bookmarks in the folder and add them to spaceBookmarks if there's an open tab
+                    const processBookmarkFolder = async (folder) => {
+                        const bookmarks = [];
+                        const items = await chrome.bookmarks.getChildren(folder.id);
+                        
+                        for (const item of items) {
+                            if (item.url) {
+                                // This is a bookmark
+                                const tab = tabs.find(t => t.url === item.url);
+                                if (tab) {
+                                    bookmarks.push(tab.id);
+                                }
+                            } else {
+                                // This is a folder, recursively process it
+                                const subFolderBookmarks = await processBookmarkFolder(item);
+                                bookmarks.push(...subFolderBookmarks);
+                            }
+                        }
+                        
+                        return bookmarks;
+                    };
+                    
+                    spaceBookmarks = await processBookmarkFolder(bookmarkFolder);
+                    // Remove null values from spaceBookmarks
+                    spaceBookmarks = spaceBookmarks.filter(id => id !== null);
+
+                    console.log("space bookmarks in", group.title, spaceBookmarks);
+                }
                 const space = {
                     id: group.id,
                     uuid: generateUUID(),
                     name: group.title,
                     color: group.color,
                     spaceBookmarks: spaceBookmarks,
-                    temporaryTabs: tabs.map(tab => tab.id)
+                    temporaryTabs: tabs.filter(tab => !spaceBookmarks.includes(tab.id)).map(tab => tab.id)
                 };
-                chrome.bookmarks.getSubTree(spacesFolder.id, async mainFolder => {
-                     // Create bookmark folder for the space if it doesn't exist
-                    const bookmarkFolder = mainFolder[0].children?.find(f => f.title == space.name);
-                    console.log("looking for existing folder", mainFolder, bookmarkFolder);
-                    if (!bookmarkFolder) {
-                        console.log("creating new folder")
-                        await chrome.bookmarks.create({
-                            parentId: spacesFolder.id,
-                            title: space.name
-                        });
-                    }
-                })
 
                 return space;
             }));
             spaces.forEach(space => createSpaceElement(space));
+            console.log("initial save", spaces);
             saveSpaces();
 
             let activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -420,7 +448,7 @@ function setActiveSpace(spaceId, updateTab = true) {
 }
 
 function saveSpaces() {
-    console.log('Saving spaces to storage...');
+    console.log('Saving spaces to storage...', spaces);
     chrome.storage.local.set({ spaces }, () => {
         console.log('Spaces saved successfully');
     });
@@ -830,7 +858,11 @@ async function closeTab(tabElement, tab, isPinned = false, isBookmarkOnly = fals
         return;
     }
     const activeSpace = spaces.find(s => s.id === activeSpaceId);
-    if (activeSpace?.spaceBookmarks.includes(tab.id) || isPinned) {
+    console.log("activeSpace", activeSpace);
+    const isCurrentlyPinned = activeSpace?.spaceBookmarks.includes(tab.id);
+    const isCurrentlyTemporary= activeSpace?.temporaryTabs.includes(tab.id);
+    console.log("isCurrentlyPinned", isCurrentlyPinned, "isCurrentlyTemporary", isCurrentlyTemporary, "isPinned", isPinned);
+    if (isCurrentlyPinned || (isPinned && !isCurrentlyTemporary)) {
         const arcifyFolder = await getOrCreateArcifyFolder();
         const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
 
