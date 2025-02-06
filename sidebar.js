@@ -839,11 +839,10 @@ console.log('Closing tab:', tab);
         });
         return;
     }
-
-    if (isPinned) {
+    const activeSpace = spaces.find(s => s.id === activeSpaceId);
+    if (activeSpace?.spaceBookmarks.includes(tab.id)) {
         const arcifyFolder = await getOrCreateArcifyFolder();
         const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
-        const activeSpace = spaces.find(s => s.id === activeSpaceId);
 
         const spaceFolder = spaceFolders.find(f => f.title === activeSpace.name);
         console.log("spaceFolder", spaceFolder);
