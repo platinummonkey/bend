@@ -148,7 +148,7 @@ async function initSidebar() {
         currentWindow = await chrome.windows.getCurrent({populate: false});
 
         let tabGroups = await chrome.tabGroups.query({});
-        let allTabs = await chrome.tabs.query({});
+        let allTabs = await chrome.tabs.query({currentWindow: true});
         console.log("tabGroups", tabGroups);
         console.log("allTabs", allTabs);
         // Create bookmarks folder for spaces if it doesn't exist
@@ -443,7 +443,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                 } else {
                     targetContainer.appendChild(draggingElement);
                 }
-
+                
                 // Handle tab being moved to pinned section or folder
                 if (container.dataset.tabType === 'pinned' && draggingElement.dataset.tabId && !isDraggingTab) {
                     console.log("Tab dragged to pinned section or folder");
@@ -535,6 +535,47 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
                                         });
                                     }
                                 }
+                            }
+
+                            saveSpaces();
+                        }
+                        isDraggingTab = false;
+                    });
+                } else if (container.dataset.tabType === 'temporary' && draggingElement.dataset.tabId && !isDraggingTab) {
+                    console.log("Tab dragged to temporary section");
+                    isDraggingTab = true;
+                    const tabId = parseInt(draggingElement.dataset.tabId);
+                    chrome.tabs.get(tabId, async (tab) => {
+                        const space = spaces.find(s => s.id === parseInt(activeSpaceId));
+
+                        if (space && tab) {
+                            // Remove tab from bookmarks if it exists
+                            const arcifyFolder = await getOrCreateArcifyFolder();
+                            const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
+                            const spaceFolder = spaceFolders.find(f => f.title === space.name);
+
+                            if (spaceFolder) {
+                                const searchAndRemoveBookmark = async (folderId) => {
+                                    const items = await chrome.bookmarks.getChildren(folderId);
+                                    for (const item of items) {
+                                        if (item.url === tab.url) {
+                                            await chrome.bookmarks.remove(item.id);
+                                            return true;
+                                        } else if (!item.url) {
+                                            const found = await searchAndRemoveBookmark(item.id);
+                                            if (found) return true;
+                                        }
+                                    }
+                                    return false;
+                                };
+
+                                await searchAndRemoveBookmark(spaceFolder.id);
+                            }
+
+                            // Move tab from bookmarks to temporary tabs in space data
+                            space.spaceBookmarks = space.spaceBookmarks.filter(id => id !== tabId);
+                            if (!space.temporaryTabs.includes(tabId)) {
+                                space.temporaryTabs.push(tabId);
                             }
 
                             saveSpaces();
