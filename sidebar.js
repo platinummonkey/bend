@@ -785,7 +785,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
 }
 
 async function closeTab(tabElement, tab, isPinned = false, isBookmarkOnly = false) {
-    console.log('Closing tab:', tab, tabElement);
+    console.log('Closing tab:', tab, tabElement, isPinned, isBookmarkOnly);
 
     if (isBookmarkOnly) {
         // Remove from bookmarks
@@ -830,7 +830,7 @@ async function closeTab(tabElement, tab, isPinned = false, isBookmarkOnly = fals
         return;
     }
     const activeSpace = spaces.find(s => s.id === activeSpaceId);
-    if (activeSpace?.spaceBookmarks.includes(tab.id)) {
+    if (activeSpace?.spaceBookmarks.includes(tab.id) || isPinned) {
         const arcifyFolder = await getOrCreateArcifyFolder();
         const spaceFolders = await chrome.bookmarks.getChildren(arcifyFolder.id);
 
