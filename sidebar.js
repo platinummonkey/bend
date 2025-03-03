@@ -283,10 +283,10 @@ async function initSidebar() {
             if (activeTabs.length > 0) {
                 const activeTab = activeTabs[0];
                 if (activeTab.pinned) {
-                    setActiveSpace(spaces[0].id, !activeTab.pinned);
+                    setActiveSpace(spaces[0].id, false);
                     updatePinnedFavicons();
                 } else {
-                    setActiveSpace(activeTab.groupId);
+                    setActiveSpace(activeTab.groupId, false);
                 }
             } else {
                 setActiveSpace(defaultGroupId ?? spaces[0].id);
