@@ -1142,7 +1142,7 @@ function handleTabCreated(tab) {
             return;
         }
 
-        console.log('Tab created:', tab.id);
+        console.log('Tab created:', tab);
         // Always ensure we have the current activeSpaceId
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
             try {
@@ -1151,7 +1151,7 @@ function handleTabCreated(tab) {
                 const space = spaces.find(s => s.id === activeSpaceId);
 
                 if (space) {
-                    await moveTabToSpace(tab.id, space.id, false /* pinned? */);
+                    await moveTabToSpace(tab.id, space.id, false /* pinned? */, tab.openerTabId);
                     // Optionally, update UI or switch to the tab if needed
                     await chrome.tabs.update(tab.id, { active: true });
                 }
@@ -1393,7 +1393,7 @@ async function getOrCreateSpaceFolder(spaceName) {
     return spaceFolder;
 }
 
-async function moveTabToSpace(tabId, spaceId, pinned = false) {
+async function moveTabToSpace(tabId, spaceId, pinned = false, openerTabId = null) {
     // 1. Find the target space
     const space = spaces.find(s => s.id === spaceId);
     if (!space) {
@@ -1433,7 +1433,18 @@ async function moveTabToSpace(tabId, spaceId, pinned = false) {
         const chromeTab = await chrome.tabs.get(tabId);
         const tabElement = createTabElement(chromeTab, pinned);
         if (container.children.length > 1) {
-            container.insertBefore(tabElement, container.firstChild);
+            if (openerTabId) {
+                let tabs = container.querySelectorAll(`.tab`);
+                const openerTabIndex = Array.from(tabs).findIndex(tab => tab.dataset.tabId == openerTabId);
+                if (openerTabIndex + 1 < tabs.length) {
+                    const tabToInsertBefore = tabs[openerTabIndex + 1];
+                    container.insertBefore(tabElement, tabToInsertBefore);
+                } else {
+                    container.appendChild(tabElement);
+                }
+            } else {
+                container.insertBefore(tabElement, container.firstChild);
+            }
         } else {
             container.appendChild(tabElement);
         }
