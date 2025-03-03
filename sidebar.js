@@ -446,11 +446,13 @@ async function setActiveSpace(spaceId, updateTab = true) {
 
     // Get all tabs in the space and activate the last one
     if (updateTab) {
+        const space = spaces.find(s => s.id === parseInt(spaceId));
+        console.log("updateTab space",space);
         chrome.tabs.query({ groupId: spaceId }, tabs => {
             if (tabs.length > 0) {
-                const lastTab = tabs[tabs.length - 1];
-                chrome.tabs.update(lastTab.id, { active: true });
-                activateTabInDOM(lastTab.id);
+                const lastTab = space.lastTab ?? tabs[tabs.length - 1].id;
+                chrome.tabs.update(lastTab, { active: true });
+                activateTabInDOM(lastTab);
             }
         });
     }
@@ -1311,6 +1313,13 @@ function handleTabActivated(activeInfo) {
             space.spaceBookmarks.includes(activeInfo.tabId) ||
             space.temporaryTabs.includes(activeInfo.tabId)
         );
+        console.log("found space", spaceWithTab);
+
+        if (spaceWithTab) {
+            spaceWithTab.lastTab = activeInfo.tabId;
+            saveSpaces();
+            console.log("lasttab space", spaces);
+        }
 
         if (spaceWithTab && spaceWithTab.id !== activeSpaceId) {
             // Switch to the space containing the tab
