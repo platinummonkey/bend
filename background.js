@@ -38,3 +38,11 @@ if (chrome.contextMenus) {
         })
     });
 }
+
+chrome.commands.onCommand.addListener(function(command) {
+    if (command === "quickPinToggle") {
+        console.log("sending");
+        // Send a message to the sidebar
+        chrome.runtime.sendMessage({ command: "quickPinToggle" });
+    }
+});

@@ -42,6 +42,13 @@
         "mac": "Command+K"
       },
       "description": "Toggle side panel"
+    },
+    "quickPinToggle": {
+      "suggested_key": {
+        "default": "Ctrl+D",
+        "mac": "Command+D"
+      },
+      "description": "Quick Pin/Unpin Tab"
     }
   }
 }
