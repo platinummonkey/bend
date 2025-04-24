@@ -796,3 +796,10 @@ body.compact-mode .settings-btn svg {
     width: 16px;
     height: 16px;
 }
+
+.section-divider {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+    margin: 8px 0;
+    opacity: 0.3;
+}
