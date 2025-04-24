@@ -1539,6 +1539,21 @@ function setupDOMElements() {
             spaceSwitcher.style.visibility = 'hidden';
         }
     });
+
+    // Add ESC key handler
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            const inputContainer = document.getElementById('addSpaceInputContainer');
+            if (inputContainer.classList.contains('visible')) {
+                closeSpaceCreation();
+            }
+        }
+    });
+
+    // Add close button handler
+    const closeSpaceBtn = document.getElementById('closeSpaceBtn');
+    closeSpaceBtn.addEventListener('click', closeSpaceCreation);
+
     document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
     newTabBtn.addEventListener('click', createNewTab);
 
@@ -1573,6 +1588,19 @@ function setupDOMElements() {
             swatch.classList.add('selected');
         }
     });
+}
+
+function closeSpaceCreation() {
+    const inputContainer = document.getElementById('addSpaceInputContainer');
+    const spaceNameInput = document.getElementById('newSpaceName');
+    const spaceSwitcher = document.getElementById('spaceSwitcher');
+    const addSpaceBtn = document.getElementById('addSpaceBtn');
+
+    inputContainer.classList.remove('visible');
+    addSpaceBtn.classList.remove('active');
+    spaceNameInput.value = '';
+    spaceSwitcher.style.opacity = '1';
+    spaceSwitcher.style.visibility = 'visible';
 }
 
 // Listener for Quick Pin shortcut
