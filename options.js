@@ -3,7 +3,6 @@ const DEFAULT_SETTINGS = {
     darkMode: false,
     autoCollapseGroups: true,
     showTabPreview: true,
-    compactMode: false,
     tabSearch: false,
     smartGroups: false
 };
@@ -13,7 +12,6 @@ const settingElements = {
     darkMode: document.getElementById('darkMode'),
     autoCollapseGroups: document.getElementById('autoCollapseGroups'),
     showTabPreview: document.getElementById('showTabPreview'),
-    compactMode: document.getElementById('compactMode'),
     tabSearch: document.getElementById('tabSearch'),
     smartGroups: document.getElementById('smartGroups'),
     emojiOnlyMode: document.getElementById('emojiOnlyMode')
@@ -76,13 +74,6 @@ function applySettings(settings) {
     } else {
         document.body.classList.remove('dark-mode');
     }
-
-    // Apply compact mode
-    if (settings.compactMode) {
-        document.body.classList.add('compact-mode');
-    } else {
-        document.body.classList.remove('compact-mode');
-    }
 }
 
 // Initialize settings page
@@ -92,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         darkMode: false,
         autoCollapseGroups: false,
         showTabPreview: true,
-        compactMode: false,
         tabSearch: false,
         smartGroups: false,
         emojiOnlyMode: false
@@ -100,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('darkMode').checked = items.darkMode;
         document.getElementById('autoCollapseGroups').checked = items.autoCollapseGroups;
         document.getElementById('showTabPreview').checked = items.showTabPreview;
-        document.getElementById('compactMode').checked = items.compactMode;
         document.getElementById('tabSearch').checked = items.tabSearch;
         document.getElementById('smartGroups').checked = items.smartGroups;
         document.getElementById('emojiOnlyMode').checked = items.emojiOnlyMode;
@@ -112,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
             darkMode: document.getElementById('darkMode').checked,
             autoCollapseGroups: document.getElementById('autoCollapseGroups').checked,
             showTabPreview: document.getElementById('showTabPreview').checked,
-            compactMode: document.getElementById('compactMode').checked,
             tabSearch: document.getElementById('tabSearch').checked,
             smartGroups: document.getElementById('smartGroups').checked,
             emojiOnlyMode: document.getElementById('emojiOnlyMode').checked

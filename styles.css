@@ -495,7 +495,7 @@ h3 {
     display: flex;
     gap: 8px;
     justify-content: flex-start;
-    padding: 8px 48px 0 0;
+    padding: 8px 48px;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
@@ -510,7 +510,7 @@ h3 {
     display: grid;
     grid-template-columns: repeat(auto-fit, 32px);
     justify-content: center;
-    padding: 8px 0;
+    padding: 8px 40px;
     gap: 8px;
     overflow: visible;
     mask-image: none;
@@ -672,12 +672,15 @@ h3 {
 .space-switcher-container {
     position: relative;
     margin-top: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 .add-space-toggle {
     position: absolute;
-    right: 0;
-    top: 8px;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 32px;
     height: 32px;
     border-radius: 16px;
@@ -690,10 +693,11 @@ h3 {
     align-items: center;
     justify-content: center;
     transition: transform 0.3s ease;
+    z-index: 1;
 }
 
 .add-space-toggle.active {
-    transform: rotate(45deg);
+    transform: translateY(-50%) rotate(45deg);
 }
 
 .add-space-toggle:hover {
