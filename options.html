@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Arcify Settings</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+        .settings-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+            background: var(--surface-color, #ffffff);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .settings-section h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 1.2em;
+            color: var(--text-color, #333);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color, #eee);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            flex-grow: 1;
+        }
+
+        .setting-description {
+            font-size: 0.9em;
+            color: var(--text-secondary-color, #666);
+            margin-top: 4px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--accent-color, #2196F3);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .save-button {
+            background-color: var(--accent-color, #2196F3);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .save-button:hover {
+            opacity: 0.9;
+        }
+
+        #saveStatus {
+            display: none;
+            color: green;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <h1>Arcify Settings</h1>
+        
+        <div class="settings-section">
+            <h2>General</h2>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Dark Mode</div>
+                    <div class="setting-description">Enable dark theme for the sidebar</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkMode">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Auto-collapse Groups</div>
+                    <div class="setting-description">Automatically collapse inactive tab groups</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoCollapseGroups">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2>Tabs</h2>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Show Tab Preview</div>
+                    <div class="setting-description">Display preview when hovering over tabs</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="showTabPreview">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Compact Mode</div>
+                    <div class="setting-description">Show tabs in a more compact view</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="compactMode">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2>Experimental Features</h2>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Tab Search</div>
+                    <div class="setting-description">Enable advanced tab search functionality</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="tabSearch">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div class="setting-label">
+                    <div>Smart Groups</div>
+                    <div class="setting-description">Automatically group related tabs</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="smartGroups">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <button id="saveSettings" class="save-button">Save Settings</button>
+        <div id="saveStatus">Settings saved successfully!</div>
+    </div>
+    <script src="options.js"></script>
+</body>
+</html> 
