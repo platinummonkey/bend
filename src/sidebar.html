@@ -14,10 +14,8 @@
         <div class="spaces-list" id="spacesList">
             <!-- Spaces will be dynamically added here -->
         </div>
-        <button class="new-tab-btn" id="newTabBtn" title="Open a new tab">
-            <span>+</span> New Tab
-        </button>
         <div class="space-switcher-container">
+            <hr class="section-divider">
             <div class="space-switcher" id="spaceSwitcher">
                 <!-- Space switcher buttons will be added here -->
             </div>
@@ -48,6 +46,7 @@
                         <option value="cyan">Cyan</option>
                     </select>
                     <button id="createSpaceBtn" disabled>Create</button>
+                    <button class="close-space-btn" id="closeSpaceBtn" title="Cancel">×</button>
                 </div>
             </div>
         </div>
@@ -85,7 +84,7 @@
                 </div>
             </div>
             <div class="pinned-tabs">
-                <h3>Pinned</h3>
+                <hr class="section-divider">
                 <div class="tabs-container" data-tab-type="pinned">
                     <template id="folderTemplate">
                         <div class="folder collapsed">
@@ -102,11 +101,15 @@
                     </template>
                 </div>
             </div>
+            <hr class="section-divider">
             <div class="temporary-tabs">
                 <div class="temp-header">
-                    <h3>Today</h3>
+                    
                     <button class="clean-tabs-btn">Clean All</button>
                 </div>
+                <button class="new-tab-btn" id="newTabBtn" title="Open a new tab">
+                    <span>+</span> New Tab
+                </button>
                 <div class="tabs-container" data-tab-type="temporary"></div>
             </div>
         </div>

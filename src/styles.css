@@ -177,6 +177,7 @@ h3 {
     border-radius: 4px;
     opacity: 0.95;
     margin-left: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 
 .space-name:focus {
@@ -466,34 +467,35 @@ h3 {
 }
 
 .new-tab-btn {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: transparent;
     border: none;
-    color: #333;
-    padding: 12px;
-    border-radius: 12px;
+    color: #666;
+    padding: 8px 12px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    font-size: 16px;
+    font-size: 13px;
     width: 100%;
+    margin: 4px 0;
     transition: background-color 0.2s;
 }
 
 .new-tab-btn:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .new-tab-btn span {
-    font-size: 20px;
+    font-size: 16px;
+    opacity: 0.7;
 }
 
 .space-switcher {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     justify-content: flex-start;
-    padding: 8px 48px 0 0;
+    padding: 4px 32px;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
@@ -501,6 +503,29 @@ h3 {
     visibility: visible;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     mask-image: linear-gradient(to right, rgb(0, 0, 0), rgb(0, 0, 0), rgb(0, 0, 0), rgb(0, 0, 0), rgba(0, 0, 0, 0));
+    min-height: 28px; /* Ensure consistent height */
+    align-items: center; /* Center items vertically */
+}
+
+/* Emoji-only mode grid layout */
+.emoji-only-mode .space-switcher {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 24px);
+    justify-content: center;
+    padding: 4px 32px;
+    gap: 4px;
+    overflow: visible;
+    mask-image: none;
+}
+
+.emoji-only-mode .space-switcher button {
+    width: 24px;
+    min-width: 24px;
+    padding: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .space-switcher::-webkit-scrollbar {
@@ -508,18 +533,18 @@ h3 {
 }
 
 .space-switcher button {
-    min-width: 32px;
+    min-width: 24px;
     max-width: none;
     width: auto;
-    height: 32px;
-    border-radius: 16px;
+    height: 24px;
+    border-radius: 12px;
     border: none;
     background-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     transition: all 0.2s;
-    padding: 0 12px;
+    padding: 0 8px;
     color: #333;
-    font-size: 14px;
+    font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -534,6 +559,30 @@ h3 {
 .space-switcher button.active {
     background-color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Emoji-only mode styles */
+.emoji-only-mode .space-switcher button {
+    width: 24px;
+    min-width: 24px;
+    padding: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-only-mode .space-switcher button span.space-name-text {
+    display: none;
+}
+
+.emoji-only-mode .space-switcher button span.space-emoji {
+    margin: 0;
+}
+
+/* Full name mode styles */
+.space-switcher button span.space-emoji {
+    margin-right: 6px;
 }
 
 .tab {
@@ -625,32 +674,32 @@ h3 {
 .space-switcher-container {
     position: relative;
     margin-top: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 .add-space-toggle {
     position: absolute;
-    right: 0;
-    top: 8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
     border: none;
-    background-color: rgba(255, 255, 255, 0.8);
-    color: #333;
-    font-size: 18px;
+    background: none;
+    color: #666;
+    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: transform 0.3s ease;
-}
-
-.add-space-toggle.active {
-    transform: rotate(45deg);
+    z-index: 1;
+    margin-top: 2px; /* Adjust for visual centering */
 }
 
 .add-space-toggle:hover {
-    background-color: rgba(255, 255, 255, 1);
+    color: #333;
 }
 
 .add-space-input-container {
@@ -678,6 +727,7 @@ h3 {
     color: #333;
     outline: none;
     transition: background-color 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 
 #newSpaceName:focus {
@@ -706,6 +756,23 @@ h3 {
 #createSpaceBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.close-space-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.close-space-btn:hover {
+    color: #333;
 }
 
 .new-tab-btn span {
@@ -745,4 +812,79 @@ h3 {
     15% { opacity: 1; transform: translate(-50%, 0); }
     85% { opacity: 1; transform: translate(-50%, 0); }
     100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.settings-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin: 0 auto;
+}
+
+.settings-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+.settings-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+body.dark-mode .settings-btn {
+    color: #999;
+}
+
+body.dark-mode .settings-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* Compact mode styles */
+body.compact-mode .settings-btn {
+    padding: 4px;
+}
+
+body.compact-mode .settings-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+    margin: 8px 0;
+    opacity: 0.3;
+}
+
+.display-options {
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+}
+
+.display-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.emoji-only-toggle {
+    margin: 0;
 }

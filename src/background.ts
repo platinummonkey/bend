@@ -46,3 +46,11 @@ chrome.commands.onCommand.addListener(function(command) {
         chrome.runtime.sendMessage({ command: "quickPinToggle" });
     }
 });
+
+// Listen for messages from the extension
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'openSettings') {
+        // Open settings in a new tab
+        chrome.tabs.create({ url: 'options.html' });
+    }
+});

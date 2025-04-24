@@ -13,15 +13,17 @@
     "favicon"
   ],
   "side_panel": {
-    "default_path": "sidebar.html"
+    "default_path": "dist/sidebar.html"
   },
-  "action": {},
+  "options_page": "dist/options.html",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "dist/background.js",
+    "type": "module"
   },
   "web_accessible_resources": [{
     "resources": [
-      "sidebar.js",
+      "dist/sidebar.js",
+      "dist/options.js",
       "assets/*",
       "_favicon/*"
     ],

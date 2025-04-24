@@ -1,51 +1,73 @@
-# Arcify: Arc-like Vertical Tab Spaces
+# Arcify: Arc-like Vertical Tab Spaces for Chrome
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-A Chrome extension that replicates Arc browser's tab management system, providing a vertical sidebar for efficient tab organization and management.
+A Chrome extension that replicates Arc browser's tab management system with vertical tab grouping, sub-grouping, and virtual spaces.
 
 ![Demo](assets/extension.gif)
 
 ## Features
 
 - Vertical tab management
-- Tab grouping functionality
-- Keyboard shortcuts for quick access
+- Tab grouping and sub-grouping
+- Virtual spaces for better tab organization
+- Pinned tabs with favicon display
 - Bookmark integration
-- Clean, minimal interface
+- Drag and drop functionality
+- Keyboard shortcuts
 
-## Development Setup
+## Development
 
 ### Prerequisites
 
-- Google Chrome or Chromium-based browser
-- Git (for version control)
-- Basic knowledge of HTML, CSS, and JavaScript
+- Node.js (v14 or higher)
+- npm
 
-### Loading the Extension
+### Setup
 
-1. Clone the repository
-   ```bash
-   git clone https://github.com/nisargkolhe/arcify.git
-   cd arcify
-   ```
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/arcify.git
+cd arcify
+```
 
-2. Open Chrome Extensions page
-   - Navigate to `chrome://extensions/`
-   - Or go to Menu → More Tools → Extensions
+2. Install dependencies:
+```bash
+npm install
+```
 
-3. Enable Developer Mode
-   - Toggle the "Developer mode" switch in the top right corner
+3. Build the extension:
+```bash
+./build.sh
+```
 
-4. Load the Extension
-   - Click "Load unpacked"
-   - Select the directory containing the extension files
-   - The extension should now appear in your browser
+This will:
+- Compile TypeScript files to JavaScript
+- Copy HTML, CSS, and assets to the dist directory
+- Create a production-ready extension in the dist directory
 
-5. Development
-   - Make changes to the code
-   - Click the refresh icon on the extension card to apply changes
-   - Check the extension's developer tools for any errors
+### Development Workflow
+
+1. Make changes to files in the `src` directory
+2. Run the build script:
+```bash
+./build.sh
+```
+3. Load the `dist` directory as an unpacked extension in Chrome
+
+### Loading the Extension in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions`
+2. Enable "Developer mode" in the top right
+3. Click "Load unpacked" and select the `dist` directory
+
+## Usage
+
+- Use Ctrl/Cmd+K to toggle the side panel
+- Use Ctrl/Cmd+D to quickly pin/unpin tabs
+- Drag and drop tabs to organize them
+- Create new spaces with the + button
+- Create sub-groups within spaces
 
 ## Issues and Feature Requests
 
