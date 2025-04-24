@@ -466,27 +466,28 @@ h3 {
 }
 
 .new-tab-btn {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: transparent;
     border: none;
-    color: #333;
-    padding: 12px;
-    border-radius: 12px;
+    color: #666;
+    padding: 8px 12px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    font-size: 16px;
+    font-size: 13px;
     width: 100%;
+    margin: 4px 0;
     transition: background-color 0.2s;
 }
 
 .new-tab-btn:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .new-tab-btn span {
-    font-size: 20px;
+    font-size: 16px;
+    opacity: 0.7;
 }
 
 .space-switcher {
@@ -745,4 +746,53 @@ h3 {
     15% { opacity: 1; transform: translate(-50%, 0); }
     85% { opacity: 1; transform: translate(-50%, 0); }
     100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.settings-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin: 0 auto;
+}
+
+.settings-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+.settings-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+body.dark-mode .settings-btn {
+    color: #999;
+}
+
+body.dark-mode .settings-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* Compact mode styles */
+body.compact-mode .settings-btn {
+    padding: 4px;
+}
+
+body.compact-mode .settings-btn svg {
+    width: 16px;
+    height: 16px;
 }

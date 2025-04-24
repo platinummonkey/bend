@@ -15,13 +15,14 @@
   "side_panel": {
     "default_path": "sidebar.html"
   },
-  "action": {},
+  "options_page":  "options.html",
   "background": {
     "service_worker": "background.js"
   },
   "web_accessible_resources": [{
     "resources": [
       "sidebar.js",
+      "options.js",
       "assets/*",
       "_favicon/*"
     ],

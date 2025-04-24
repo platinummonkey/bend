@@ -13,6 +13,7 @@ const spaceSwitcher = document.getElementById('spaceSwitcher');
 const addSpaceBtn = document.getElementById('addSpaceBtn');
 const newTabBtn = document.getElementById('newTabBtn');
 const spaceTemplate = document.getElementById('spaceTemplate');
+const settingsBtn = document.getElementById('settingsBtn');
 
 // Global state
 let spaces = [];
@@ -60,8 +61,6 @@ async function updateBookmarkForTab(tab) {
     }
     
 }
-
-console.log("hi");
 
 // Function to update pinned favicons
 async function updatePinnedFavicons() {
@@ -140,6 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.onRemoved.addListener(handleTabRemove);
     // chrome.tabs.onMoved.addListener(handleTabMove);
     chrome.tabs.onActivated.addListener(handleTabActivated);
+
+    // Add settings button click handler
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            chrome.runtime.sendMessage({ type: 'openSettings' });
+        });
+    }
 });
 
 async function initSidebar() {
