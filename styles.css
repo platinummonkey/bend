@@ -177,6 +177,7 @@ h3 {
     border-radius: 4px;
     opacity: 0.95;
     margin-left: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 
 .space-name:focus {
@@ -504,6 +505,27 @@ h3 {
     mask-image: linear-gradient(to right, rgb(0, 0, 0), rgb(0, 0, 0), rgb(0, 0, 0), rgb(0, 0, 0), rgba(0, 0, 0, 0));
 }
 
+/* Emoji-only mode grid layout */
+.emoji-only-mode .space-switcher {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 32px);
+    justify-content: center;
+    padding: 8px 0;
+    gap: 8px;
+    overflow: visible;
+    mask-image: none;
+}
+
+.emoji-only-mode .space-switcher button {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .space-switcher::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
 }
@@ -535,6 +557,30 @@ h3 {
 .space-switcher button.active {
     background-color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Emoji-only mode styles */
+.emoji-only-mode .space-switcher button {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-only-mode .space-switcher button span.space-name-text {
+    display: none;
+}
+
+.emoji-only-mode .space-switcher button span.space-emoji {
+    margin: 0;
+}
+
+/* Full name mode styles */
+.space-switcher button span.space-emoji {
+    margin-right: 6px;
 }
 
 .tab {
@@ -679,6 +725,7 @@ h3 {
     color: #333;
     outline: none;
     transition: background-color 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 
 #newSpaceName:focus {
@@ -802,4 +849,23 @@ body.compact-mode .settings-btn svg {
     border-top: 1px solid rgba(0, 0, 0, 0.3);
     margin: 8px 0;
     opacity: 0.3;
+}
+
+.display-options {
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+}
+
+.display-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.emoji-only-toggle {
+    margin: 0;
 }

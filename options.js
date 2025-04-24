@@ -15,7 +15,8 @@ const settingElements = {
     showTabPreview: document.getElementById('showTabPreview'),
     compactMode: document.getElementById('compactMode'),
     tabSearch: document.getElementById('tabSearch'),
-    smartGroups: document.getElementById('smartGroups')
+    smartGroups: document.getElementById('smartGroups'),
+    emojiOnlyMode: document.getElementById('emojiOnlyMode')
 };
 
 // Load settings from storage
@@ -86,14 +87,45 @@ function applySettings(settings) {
 
 // Initialize settings page
 document.addEventListener('DOMContentLoaded', () => {
-    // Load initial settings
-    loadSettings();
+    // Load saved settings
+    chrome.storage.sync.get({
+        darkMode: false,
+        autoCollapseGroups: false,
+        showTabPreview: true,
+        compactMode: false,
+        tabSearch: false,
+        smartGroups: false,
+        emojiOnlyMode: false
+    }, (items) => {
+        document.getElementById('darkMode').checked = items.darkMode;
+        document.getElementById('autoCollapseGroups').checked = items.autoCollapseGroups;
+        document.getElementById('showTabPreview').checked = items.showTabPreview;
+        document.getElementById('compactMode').checked = items.compactMode;
+        document.getElementById('tabSearch').checked = items.tabSearch;
+        document.getElementById('smartGroups').checked = items.smartGroups;
+        document.getElementById('emojiOnlyMode').checked = items.emojiOnlyMode;
+    });
 
-    // Add save button listener
-    const saveButton = document.getElementById('saveSettings');
-    if (saveButton) {
-        saveButton.addEventListener('click', saveSettings);
-    }
+    // Save settings
+    document.getElementById('saveSettings').addEventListener('click', () => {
+        const settings = {
+            darkMode: document.getElementById('darkMode').checked,
+            autoCollapseGroups: document.getElementById('autoCollapseGroups').checked,
+            showTabPreview: document.getElementById('showTabPreview').checked,
+            compactMode: document.getElementById('compactMode').checked,
+            tabSearch: document.getElementById('tabSearch').checked,
+            smartGroups: document.getElementById('smartGroups').checked,
+            emojiOnlyMode: document.getElementById('emojiOnlyMode').checked
+        };
+
+        chrome.storage.sync.set(settings, () => {
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.style.display = 'block';
+            setTimeout(() => {
+                saveStatus.style.display = 'none';
+            }, 2000);
+        });
+    });
 
     // Add change listeners to all toggles for auto-save
     Object.values(settingElements).forEach(element => {

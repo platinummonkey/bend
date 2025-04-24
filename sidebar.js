@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing sidebar...');
     initSidebar();
     updatePinnedFavicons(); // Initial load of pinned favicons
+    initializeEmojiOnlyMode();
 
     // Add Chrome tab event listeners
     chrome.tabs.onCreated.addListener(handleTabCreated);
@@ -412,9 +413,7 @@ function updateSpaceSwitcher() {
     console.log('Updating space switcher...');
     spaceSwitcher.innerHTML = '';
     spaces.forEach(space => {
-        const button = document.createElement('button');
-        button.textContent = space.name;
-        button.classList.toggle('active', space.id === activeSpaceId);
+        const button = createSpaceSwitcherButton(space.name, space.id === activeSpaceId);
         button.addEventListener('click', async () => await setActiveSpace(space.id));
         spaceSwitcher.appendChild(button);
     });
@@ -1606,3 +1605,53 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         
     }   
 });
+
+// Handle emoji-only mode toggle
+function initializeEmojiOnlyMode() {
+    const sidebarContainer = document.getElementById('sidebar-container');
+    
+    // Load saved preference from synced storage
+    chrome.storage.sync.get({ emojiOnlyMode: false }, (items) => {
+        if (items.emojiOnlyMode) {
+            sidebarContainer.classList.add('emoji-only-mode');
+        } else {
+            sidebarContainer.classList.remove('emoji-only-mode');
+        }
+    });
+
+    // Listen for changes to the setting
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'sync' && changes.emojiOnlyMode) {
+            if (changes.emojiOnlyMode.newValue) {
+                sidebarContainer.classList.add('emoji-only-mode');
+            } else {
+                sidebarContainer.classList.remove('emoji-only-mode');
+            }
+        }
+    });
+}
+
+// Function to create space switcher button with emoji support
+function createSpaceSwitcherButton(spaceName, isActive = false) {
+    const button = document.createElement('button');
+    
+    // Split emoji and text (assuming emoji is at the start if present)
+    const matches = spaceName.match(/^([\u{1F300}-\u{1F9FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F1E0}-\u{1F1FF}])*\s*(.*)/u);
+    
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'space-emoji';
+    emojiSpan.textContent = matches?.[1] || '';
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = 'space-name-text';
+    textSpan.textContent = matches?.[2]?.trim() || spaceName;
+    
+    button.appendChild(emojiSpan);
+    button.appendChild(textSpan);
+    
+    if (isActive) {
+        button.classList.add('active');
+    }
+    
+    return button;
+}
