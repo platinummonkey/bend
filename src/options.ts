@@ -13,8 +13,7 @@ const settingElements = {
     autoCollapseGroups: document.getElementById('autoCollapseGroups'),
     showTabPreview: document.getElementById('showTabPreview'),
     tabSearch: document.getElementById('tabSearch'),
-    smartGroups: document.getElementById('smartGroups'),
-    emojiOnlyMode: document.getElementById('emojiOnlyMode')
+    smartGroups: document.getElementById('smartGroups')
 };
 
 // Load settings from storage
@@ -84,15 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
         autoCollapseGroups: false,
         showTabPreview: true,
         tabSearch: false,
-        smartGroups: false,
-        emojiOnlyMode: false
+        smartGroups: false
     }, (items) => {
         document.getElementById('darkMode').checked = items.darkMode;
         document.getElementById('autoCollapseGroups').checked = items.autoCollapseGroups;
         document.getElementById('showTabPreview').checked = items.showTabPreview;
         document.getElementById('tabSearch').checked = items.tabSearch;
         document.getElementById('smartGroups').checked = items.smartGroups;
-        document.getElementById('emojiOnlyMode').checked = items.emojiOnlyMode;
     });
 
     // Save settings
@@ -102,8 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             autoCollapseGroups: document.getElementById('autoCollapseGroups').checked,
             showTabPreview: document.getElementById('showTabPreview').checked,
             tabSearch: document.getElementById('tabSearch').checked,
-            smartGroups: document.getElementById('smartGroups').checked,
-            emojiOnlyMode: document.getElementById('emojiOnlyMode').checked
+            smartGroups: document.getElementById('smartGroups').checked
         };
 
         chrome.storage.sync.set(settings, () => {

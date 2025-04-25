@@ -130,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing sidebar...');
     initSidebar();
     updatePinnedFavicons(); // Initial load of pinned favicons
-    initializeEmojiOnlyMode();
 
     // Add Chrome tab event listeners
     chrome.tabs.onCreated.addListener(handleTabCreated);
@@ -161,6 +160,11 @@ async function initSidebar() {
         console.log("allTabs", allTabs);
         // Create bookmarks folder for spaces if it doesn't exist
         const spacesFolder = await getOrCreateArcifyFolder();
+
+        // Load saved spaces from storage
+        const result = await chrome.storage.local.get('spaces');
+        const savedSpaces = result.spaces || [];
+        console.log("saved spaces", savedSpaces);
 
         if (tabGroups.length === 0) {
             let currentTabs = allTabs.filter(tab => tab.id && !tab.pinned) ?? [];
@@ -232,6 +236,10 @@ async function initSidebar() {
                 const tabs = await chrome.tabs.query({groupId: group.id});
                 console.log("processing group", group);
 
+                // Find matching saved space to preserve emoji
+                const savedSpace = savedSpaces.find(s => s.id === group.id);
+                const savedEmoji = savedSpace?.emoji;
+
                 const mainFolder = await chrome.bookmarks.getSubTree(spacesFolder.id);
                 const bookmarkFolder = mainFolder[0].children?.find(f => f.title == group.title);
                 console.log("looking for existing folder", group.title, mainFolder, bookmarkFolder);
@@ -276,6 +284,7 @@ async function initSidebar() {
                     id: group.id,
                     uuid: generateUUID(),
                     name: group.title,
+                    emoji: savedEmoji || '📁',
                     color: group.color,
                     spaceBookmarks: spaceBookmarks,
                     temporaryTabs: tabs.filter(tab => !spaceBookmarks.includes(tab.id)).map(tab => tab.id)
@@ -1610,30 +1619,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }   
 });
 
-// Handle emoji-only mode toggle
-function initializeEmojiOnlyMode() {
-    const sidebarContainer = document.getElementById('sidebar-container');
-    
-    // Load saved preference from synced storage
-    chrome.storage.sync.get({ emojiOnlyMode: false }, (items) => {
-        if (items.emojiOnlyMode) {
-            sidebarContainer.classList.add('emoji-only-mode');
-        } else {
-            sidebarContainer.classList.remove('emoji-only-mode');
-        }
-    });
-
-    // Listen for changes to the setting
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === 'sync' && changes.emojiOnlyMode) {
-            if (changes.emojiOnlyMode.newValue) {
-                sidebarContainer.classList.add('emoji-only-mode');
-            } else {
-                sidebarContainer.classList.remove('emoji-only-mode');
-            }
-        }
-    });
-}
 
 // Function to create space switcher button with emoji support
 function createSpaceSwitcherButton(spaceName, isActive = false) {
