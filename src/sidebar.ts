@@ -1,4 +1,5 @@
 import { FOLDER_CLOSED_ICON, FOLDER_OPEN_ICON } from './icons.js';
+import { Space, SpaceElement, TabElement } from './types';
 
 // Constants
 const MouseButton = {
@@ -16,8 +17,8 @@ const spaceTemplate = document.getElementById('spaceTemplate');
 const settingsBtn = document.getElementById('settingsBtn');
 
 // Global state
-let spaces = [];
-let activeSpaceId = null;
+let spaces: Space[] = [];
+let activeSpaceId: number | null = null;
 let isCreatingSpace = false;
 // let isCreatingTab = false;
 let isOpeningBookmark = false;
@@ -306,17 +307,41 @@ async function initSidebar() {
     setupDOMElements();
 }
 
-function createSpaceElement(space) {
+function createSpaceElement(space: Space) {
     console.log('Creating space element for:', space.id);
-    const spaceElement = spaceTemplate.content.cloneNode(true);
+    const spaceElement = spaceTemplate.content.cloneNode(true) as DocumentFragment;
     const sidebarContainer = document.getElementById('sidebar-container');
-    const spaceContainer = spaceElement.querySelector('.space');
-    spaceContainer.dataset.spaceId = space.id;
+    const spaceContainer = spaceElement.querySelector('.space') as SpaceElement;
+    spaceContainer.dataset.spaceId = space.id.toString();
     spaceContainer.style.display = space.id === activeSpaceId ? 'block' : 'none';
-    spaceContainer.dataset.spaceUuid = space.id;
+    spaceContainer.dataset.spaceUuid = space.uuid;
 
     // Set space background color based on the tab group color
     sidebarContainer.style.setProperty('--space-bg-color', `var(--chrome-${space.color}-color, rgba(255, 255, 255, 0.1))`);
+
+    // Set up emoji input
+    const emojiInput = spaceElement.querySelector('.space-emoji') as HTMLSpanElement;
+    if (space.emoji) {
+        emojiInput.textContent = space.emoji;
+    }
+    emojiInput.addEventListener('input', async () => {
+        space.emoji = emojiInput.textContent || '📁';
+        saveSpaces();
+        updateSpaceSwitcher();
+    });
+
+    // Set up space name input
+    const nameInput = spaceElement.querySelector('.space-name') as HTMLInputElement;
+    nameInput.value = space.name;
+    nameInput.addEventListener('change', async () => {
+        const newName = nameInput.value.trim();
+        if (newName) {
+            space.name = newName;
+            await chrome.tabGroups.update(space.id, { title: newName });
+            saveSpaces();
+            updateSpaceSwitcher();
+        }
+    });
 
     // Set up color select
     const colorSelect = spaceElement.getElementById('spaceColorSelect');
@@ -356,27 +381,6 @@ function createSpaceElement(space) {
         }
     });
 
-    // Set up space name input
-    const nameInput = spaceElement.querySelector('.space-name');
-    nameInput.value = space.name;
-    nameInput.addEventListener('change', async () => {
-        // Update bookmark folder name
-        const oldName = space.name;
-        const oldFolder = await getOrCreateSpaceFolder(oldName);
-        await chrome.bookmarks.update(oldFolder.id, { title: nameInput.value });
-
-        const tabGroups = await chrome.tabGroups.query({});
-        const tabGroupForSpace = tabGroups.find(group => group.id === space.id);
-        console.log("updating tabGroupForSpace", tabGroupForSpace);
-        if (tabGroupForSpace) {
-            await chrome.tabGroups.update(tabGroupForSpace.id, {title: nameInput.value, color: 'grey'});
-        }
-
-        space.name = nameInput.value;
-        saveSpaces();
-        updateSpaceSwitcher();
-    });
-
     // Set up containers
     const pinnedContainer = spaceElement.querySelector('[data-tab-type="pinned"]');
     const tempContainer = spaceElement.querySelector('[data-tab-type="temporary"]');
@@ -413,8 +417,25 @@ function updateSpaceSwitcher() {
     console.log('Updating space switcher...');
     spaceSwitcher.innerHTML = '';
     spaces.forEach(space => {
-        const button = createSpaceSwitcherButton(space.name, space.id === activeSpaceId);
-        button.addEventListener('click', async () => await setActiveSpace(space.id));
+        const button = document.createElement('button');
+        button.dataset.spaceId = space.id.toString();
+        
+        const emoji = document.createElement('span');
+        emoji.className = 'space-emoji';
+        emoji.textContent = space.emoji || '📁';
+        
+        const name = document.createElement('span');
+        name.className = 'space-name';
+        name.textContent = space.name;
+        
+        button.appendChild(emoji);
+        button.appendChild(name);
+        
+        if (space.id === activeSpaceId) {
+            button.classList.add('active');
+        }
+        
+        button.addEventListener('click', () => setActiveSpace(space.id));
         spaceSwitcher.appendChild(button);
     });
 }
@@ -921,7 +942,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
     const tabElement = document.createElement('div');
     tabElement.classList.add('tab');
     if (!isBookmarkOnly) {
-        tabElement.dataset.tabId = tab.id;
+        tabElement.dataset.tabId = tab.id.toString();
         tabElement.draggable = true;
 
         // Add active class if this is the active tab
@@ -957,7 +978,7 @@ function createTabElement(tab, isPinned = false, isBookmarkOnly = false) {
     tabElement.addEventListener('click', async () => {
         // Remove active class from all tabs
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.pinned-favicon').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.pinned-favicon').forEach(f => f.classList.remove('active'));
 
         if (isBookmarkOnly) {
             console.log('Opening bookmark:', tab.url);
@@ -1060,75 +1081,30 @@ document.getElementById('newSpaceName').addEventListener('input', (e) => {
     createSpaceBtn.disabled = !e.target.value.trim();
 });
 
-async function createNewSpace() {
-    console.log('Creating new space... Button clicked');
+async function createSpace(name: string, color: chrome.tabGroups.ColorEnum = 'grey', emoji = '📁') {
+    if (isCreatingSpace) return;
     isCreatingSpace = true;
+
     try {
-        const spaceNameInput = document.getElementById('newSpaceName');
-        const spaceColorSelect = document.getElementById('spaceColor');
-        const spaceName = spaceNameInput.value.trim();
-        const spaceColor = spaceColorSelect.value;
-
-        if (!spaceName || spaces.some(space => space.name.toLowerCase() === spaceName.toLowerCase())) {
-            const errorPopup = document.createElement('div');
-            errorPopup.className = 'error-popup';
-            errorPopup.textContent = 'A space with this name already exists';
-            const inputContainer = document.getElementById('addSpaceInputContainer');
-            inputContainer.appendChild(errorPopup);
-
-            // Remove the error message after 3 seconds
-            setTimeout(() => {
-                errorPopup.remove();
-            }, 3000);
-            return;
-        }
-
-        // First create a new tab
-        const newTab = await new Promise((resolve, reject) => {
-            chrome.tabs.create({ active: true }, (tab) => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve(tab);
-                }
-            });
-        });
-
-        // Create a new tab group with the new tab
-        const groupId = await chrome.tabs.group({ tabIds: [newTab.id] });
-        await chrome.tabGroups.update(groupId, { title: spaceName, color: spaceColor });
-
-        const space = {
-            id: groupId,
-            uuid: generateUUID(),
-            name: spaceName,
-            color: spaceColor,
+        const space: Space = {
+            id: Date.now(),
+            uuid: crypto.randomUUID(),
+            name,
+            emoji,
+            color,
             spaceBookmarks: [],
-            temporaryTabs: [newTab.id]
+            temporaryTabs: []
         };
 
-        // Create bookmark folder for new space
-        await getOrCreateSpaceFolder(space.name);
-
         spaces.push(space);
-        console.log('New space created:', { spaceId: space.id, spaceName: space.name, spaceColor: space.color });
-
-        createSpaceElement(space);
-        updateSpaceSwitcher();
-        await setActiveSpace(space.id);
         saveSpaces();
-
-        isCreatingSpace = false;
-        // Reset the space creation UI and show space switcher
-        const addSpaceBtn = document.getElementById('addSpaceBtn');
-        const inputContainer = document.getElementById('addSpaceInputContainer');
-        const spaceSwitcher = document.getElementById('spaceSwitcher');
-        addSpaceBtn.classList.remove('active');
-        inputContainer.classList.remove('visible');
-        spaceSwitcher.style.opacity = '1';
-        spaceSwitcher.style.visibility = 'visible';
+        createSpaceElement(space);
+        await setActiveSpace(space.id);
+        
     } catch (error) {
-        console.error('Error creating new space:', error);
+        console.error('Error creating space:', error);
+    } finally {
+        isCreatingSpace = false;
     }
 }
 
@@ -1554,7 +1530,7 @@ function setupDOMElements() {
     const closeSpaceBtn = document.getElementById('closeSpaceBtn');
     closeSpaceBtn.addEventListener('click', closeSpaceCreation);
 
-    document.getElementById('createSpaceBtn').addEventListener('click', createNewSpace);
+    document.getElementById('createSpaceBtn').addEventListener('click', createSpace);
     newTabBtn.addEventListener('click', createNewTab);
 
     const createSpaceColorSwatch = document.getElementById('createSpaceColorSwatch');

@@ -4,6 +4,7 @@ export interface Space {
   id: number;
   uuid: string;
   name: string;
+  emoji?: string;
   color: chrome.tabGroups.ColorEnum;
   spaceBookmarks: chrome.bookmarks.BookmarkTreeNode[];
   temporaryTabs: number[];
