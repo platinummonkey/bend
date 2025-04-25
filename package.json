@@ -3,16 +3,20 @@
   "version": "2.1.0",
   "description": "A sidebar extension that replicates Arc browser's tab management system",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch",
+    "build": "tsc && bash copy-assets.sh",
+    "watch:ts": "tsc --watch",
+    "watch:assets": "nodemon --watch src --ext html,css --exec 'bash copy-assets.sh'",
+    "watch": "concurrently \"npm run watch:ts\" \"npm run watch:assets\"",
     "lint": "eslint . --ext .ts",
-    "dev": "tsc --watch"
+    "dev": "npm run watch"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
+    "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
+    "nodemon": "^3.1.0",
     "typescript": "^5.3.3"
   }
-} 
+}

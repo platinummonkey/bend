@@ -81,11 +81,8 @@ h3 {
 .pinned-favicons {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    /* padding: 8px; */
-    border-radius: 12px;
-    /* background-color: rgba(255, 255, 255, 0.1); */
     gap: 8px;
+    border-radius: 12px;
     justify-content: space-between;
 }
 
@@ -155,9 +152,7 @@ h3 {
 }
 
 .space {
-    /* background-color: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 16px; */
 }
 
 .space-header {
@@ -165,6 +160,13 @@ h3 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+}
+
+.space-name-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
 }
 
 .space-name {
@@ -287,16 +289,26 @@ h3 {
 .color-swatch[data-color="cyan"] { background-color: #22D3EE; }
 .folder {
     margin: 8px 0;
-    /* background-color: rgba(255, 255, 255, 0.1); */
     border-radius: 8px;
     overflow: hidden;
-    /* border: 1px solid rgba(0, 0, 0, 0.1); */
-    background-color: rgba(255, 255, 255, 0.2);
     transition: all 0.3s;
+    background-color: transparent;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.folder-header:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .folder.collapsed {
-    background-color: rgba(1, 1, 1, 0);
+    background-color: transparent;
 }
 
 .folder.collapsed div.tab-placeholder {
@@ -306,10 +318,6 @@ h3 {
 .folder.collapsed div.folder-icon {
     width: 16px;
     margin-right: 10px;
-}
-
-.folder.collapsed:hover {
-    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .folder-title {
@@ -322,14 +330,6 @@ h3 {
 
 .folder-title.hidden {
     display: none;
-}
-
-.folder-header {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    /* background-color: rgba(255, 255, 255, 0.2); */
-    /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
 }
 
 .folder-icon {
@@ -380,8 +380,6 @@ h3 {
     display: flex;
     flex-direction: column;
     min-height: 12px;
-    /* gap: 8px; */
-    /* background-color: rgba(1, 1, 1, 0.1); */
 }
 
 .folder-content.collapsed {
@@ -507,8 +505,7 @@ h3 {
     align-items: center; /* Center items vertically */
 }
 
-/* Emoji-only mode grid layout */
-.emoji-only-mode .space-switcher {
+.space-switcher {
     display: grid;
     grid-template-columns: repeat(auto-fit, 24px);
     justify-content: center;
@@ -518,7 +515,7 @@ h3 {
     mask-image: none;
 }
 
-.emoji-only-mode .space-switcher button {
+.space-switcher button {
     width: 24px;
     min-width: 24px;
     padding: 0;
@@ -533,23 +530,52 @@ h3 {
 }
 
 .space-switcher button {
-    min-width: 24px;
+    min-width: 32px;
     max-width: none;
     width: auto;
-    height: 24px;
-    border-radius: 12px;
+    height: 32px;
+    border-radius: 16px;
     border: none;
     background-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     transition: all 0.2s;
-    padding: 0 8px;
+    padding: 0 12px;
     color: #333;
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     flex: none;
-    transition: background-color 0.3s;
+    position: relative;
+}
+
+.space-switcher button .space-emoji {
+    font-size: 16px;
+    min-width: auto;
+    padding: 0;
+}
+
+.space-switcher button .space-name {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.space-switcher button:hover .space-name {
+    opacity: 1;
+    visibility: visible;
+    top: -28px;
 }
 
 .space-switcher button:hover {
@@ -561,8 +587,7 @@ h3 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Emoji-only mode styles */
-.emoji-only-mode .space-switcher button {
+.space-switcher button {
     width: 24px;
     min-width: 24px;
     padding: 0;
@@ -572,17 +597,12 @@ h3 {
     justify-content: center;
 }
 
-.emoji-only-mode .space-switcher button span.space-name-text {
+.space-switcher button span.space-name-text {
     display: none;
 }
 
-.emoji-only-mode .space-switcher button span.space-emoji {
-    margin: 0;
-}
-
-/* Full name mode styles */
 .space-switcher button span.space-emoji {
-    margin-right: 6px;
+    margin: 0;
 }
 
 .tab {
@@ -887,4 +907,27 @@ body.compact-mode .settings-btn svg {
 
 .emoji-only-toggle {
     margin: 0;
+}
+
+.space-emoji {
+    font-size: 18px;
+    min-width: 24px;
+    cursor: text;
+    padding: 2px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.space-emoji:empty::before {
+    content: attr(placeholder);
+    color: #666;
+}
+
+.space-emoji:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.space-emoji:focus {
+    background-color: rgba(0, 0, 0, 0.1);
+    outline: none;
 }

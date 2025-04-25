@@ -7,16 +7,18 @@ chrome.sidePanel.setPanelBehavior({
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
-        chrome.tabs.create({ url: 'onboarding.html', active: true }, async (tab) => {
+        chrome.tabs.create({ url: 'onboarding.html', active: true }, async (createdTab) => {
+            if (!createdTab?.id) return;
+            
             const tabGroups = await chrome.tabGroups.query({});
             const defaultGroup = tabGroups.find(group => group.title === 'Home');
             if (defaultGroup) {
                 console.log("found existing default group", defaultGroup);
                 // Move ungrouped tabs to existing Default group
-                await chrome.tabs.group({tabIds: tab.id, groupId: defaultGroup.id});
+                await chrome.tabs.group({tabIds: createdTab.id, groupId: defaultGroup.id});
             } else {
                 // Create new Default group
-                defaultGroupId = await chrome.tabs.group({tabIds: tab.id});
+                let defaultGroupId = await chrome.tabs.group({tabIds: createdTab.id});
                 await chrome.tabGroups.update(defaultGroupId, {title: 'Home', color: 'grey'});
             }
         });
@@ -33,9 +35,10 @@ chrome.runtime.onInstalled.addListener((details) => {
 // Handle context menu clicks
 if (chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener((info, tab) => {
-        info.menuItemId === "openArcify" && chrome.sidePanel.open({
-            windowId: tab.windowId
-        })
+        if (!tab?.windowId) return;
+        if (info.menuItemId === "openArcify") {
+            chrome.sidePanel.open({ windowId: tab.windowId });
+        }
     });
 }
 

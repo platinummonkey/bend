@@ -4,6 +4,7 @@ export interface Space {
   id: number;
   uuid: string;
   name: string;
+  emoji?: string;
   color: chrome.tabGroups.ColorEnum;
   spaceBookmarks: chrome.bookmarks.BookmarkTreeNode[];
   temporaryTabs: number[];
@@ -29,19 +30,9 @@ export enum MouseButton {
   RIGHT = 2
 }
 
-export interface TabElementOptions {
-  isPinned?: boolean;
-  isBookmarkOnly?: boolean;
-}
-
 export interface SpaceCreateOptions {
   name?: string;
   color?: chrome.tabGroups.ColorEnum;
-}
-
-export interface TabMoveInfo {
-  tabId: number;
-  moveInfo: chrome.tabs.TabMoveInfo;
 }
 
 export interface BookmarkTreeNode extends chrome.bookmarks.BookmarkTreeNode {
