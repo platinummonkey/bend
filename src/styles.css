@@ -287,16 +287,26 @@ h3 {
 .color-swatch[data-color="cyan"] { background-color: #22D3EE; }
 .folder {
     margin: 8px 0;
-    /* background-color: rgba(255, 255, 255, 0.1); */
     border-radius: 8px;
     overflow: hidden;
-    /* border: 1px solid rgba(0, 0, 0, 0.1); */
-    background-color: rgba(255, 255, 255, 0.2);
     transition: all 0.3s;
+    background-color: transparent;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.folder-header:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .folder.collapsed {
-    background-color: rgba(1, 1, 1, 0);
+    background-color: transparent;
 }
 
 .folder.collapsed div.tab-placeholder {
@@ -306,10 +316,6 @@ h3 {
 .folder.collapsed div.folder-icon {
     width: 16px;
     margin-right: 10px;
-}
-
-.folder.collapsed:hover {
-    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .folder-title {
@@ -322,14 +328,6 @@ h3 {
 
 .folder-title.hidden {
     display: none;
-}
-
-.folder-header {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    /* background-color: rgba(255, 255, 255, 0.2); */
-    /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
 }
 
 .folder-icon {
