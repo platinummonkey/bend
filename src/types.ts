@@ -29,19 +29,9 @@ export enum MouseButton {
   RIGHT = 2
 }
 
-export interface TabElementOptions {
-  isPinned?: boolean;
-  isBookmarkOnly?: boolean;
-}
-
 export interface SpaceCreateOptions {
   name?: string;
   color?: chrome.tabGroups.ColorEnum;
-}
-
-export interface TabMoveInfo {
-  tabId: number;
-  moveInfo: chrome.tabs.TabMoveInfo;
 }
 
 export interface BookmarkTreeNode extends chrome.bookmarks.BookmarkTreeNode {
