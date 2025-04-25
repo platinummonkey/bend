@@ -27,8 +27,8 @@ A Chrome extension that replicates Arc browser's tab management system with vert
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/arcify.git
-cd arcify
+git clone https://github.com/yourusername/bend.git
+cd bend
 ```
 
 2. Install dependencies:
@@ -38,7 +38,7 @@ npm install
 
 3. Build the extension:
 ```bash
-./build.sh
+npm run build
 ```
 
 This will:
@@ -51,7 +51,7 @@ This will:
 1. Make changes to files in the `src` directory
 2. Run the build script:
 ```bash
-./build.sh
+npm run build
 ```
 3. Load the `dist` directory as an unpacked extension in Chrome
 
@@ -78,7 +78,7 @@ We use GitHub Issues to track bugs and feature requests. Before creating a new i
 
 ### Reporting Bugs 🐛
 
-1. Go to the [Issues](https://github.com/nisargkolhe/arcify/issues) page
+1. Go to the [Issues](https://github.com/platinummonkey/bend/issues) page
 2. Click "New Issue"
 3. Choose "Bug Report" template if available
 4. Include:
@@ -90,7 +90,7 @@ We use GitHub Issues to track bugs and feature requests. Before creating a new i
 
 ### Feature Requests 💡
 
-1. Go to the [Issues](https://github.com/nisargkolhe/arcify/issues) page
+1. Go to the [Issues](https://github.com/platinummonkey/bend/issues) page
 2. Click "New Issue"
 3. Choose "Feature Request" template if available
 4. Include:
@@ -101,7 +101,6 @@ We use GitHub Issues to track bugs and feature requests. Before creating a new i
 
 ## Contributing
 
-Discord to discuss development: https://discord.gg/DFPaQJ79
 
 We welcome contributions! Here's how you can help:
 
