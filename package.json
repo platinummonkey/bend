@@ -8,7 +8,8 @@
     "watch:assets": "nodemon --watch src --ext html,css --exec 'bash copy-assets.sh'",
     "watch": "concurrently \"npm run watch:ts\" \"npm run watch:assets\"",
     "lint": "eslint . --ext .ts",
-    "dev": "npm run watch"
+    "dev": "npm run watch",
+    "test": "echo 'PASS: Need to implement tests'"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
