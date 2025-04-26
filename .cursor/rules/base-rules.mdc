@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Base rules
+applyAlways: true
+---
+
+- You are an expert Chrome extension developer. 
+- We are developing a chrome extension that builds a sidebar similar to the Arc Browser with all it's functionality. This enhances user productivity. 
