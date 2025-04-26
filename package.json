@@ -3,6 +3,7 @@
   "version": "2.1.0",
   "description": "A sidebar extension that replicates Arc browser's tab management system",
   "scripts": {
+    "setup-dev": "bash copy-assets.sh && npm run build",
     "build": "tsc && bash copy-assets.sh",
     "watch:ts": "tsc --watch",
     "watch:assets": "nodemon --watch src --ext html,css --exec 'bash copy-assets.sh'",

@@ -38,7 +38,7 @@ npm install
 
 3. Build the extension:
 ```bash
-npm run build
+npm run setup-dev
 ```
 
 This will:
