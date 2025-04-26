@@ -46,8 +46,7 @@ jobs:
         
       - name: Create release zip
         run: |
-          cd dist
-          zip -r ../bend.zip *
+          zip -r bend.zip manifest.json LICENSE README.md dist/*
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
