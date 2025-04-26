@@ -9,12 +9,12 @@ const MouseButton = {
 };
 
 // DOM Elements
-const spacesList = document.getElementById('spacesList');
-const spaceSwitcher = document.getElementById('spaceSwitcher');
-const addSpaceBtn = document.getElementById('addSpaceBtn');
-const newTabBtn = document.getElementById('newTabBtn');
-const spaceTemplate = document.getElementById('spaceTemplate');
-const settingsBtn = document.getElementById('settingsBtn');
+const spacesList = document.getElementById('spacesList')!;
+const spaceSwitcher = document.getElementById('spaceSwitcher')!;
+const addSpaceBtn = document.getElementById('addSpaceBtn')!;
+const newTabBtn = document.getElementById('newTabBtn')!;
+const spaceTemplate = document.getElementById('spaceTemplate')!;
+const settingsBtn = document.getElementById('settingsBtn')!;
 
 // Global state
 let spaces: Space[] = [];
@@ -65,7 +65,7 @@ async function updateBookmarkForTab(tab) {
 
 // Function to update pinned favicons
 async function updatePinnedFavicons() {
-    const pinnedFavicons = document.getElementById('pinnedFavicons');
+    const pinnedFavicons = document.getElementById('pinnedFavicons')!;
     const pinnedTabs = await chrome.tabs.query({ pinned: true });
 
     // Remove favicon elements for tabs that are no longer pinned
@@ -319,7 +319,7 @@ async function initSidebar() {
 function createSpaceElement(space: Space) {
     console.log('Creating space element for:', space.id);
     const spaceElement = spaceTemplate.content.cloneNode(true) as DocumentFragment;
-    const sidebarContainer = document.getElementById('sidebar-container');
+    const sidebarContainer = document.getElementById('sidebar-container')!;
     const spaceContainer = spaceElement.querySelector('.space') as SpaceElement;
     spaceContainer.dataset.spaceId = space.id.toString();
     spaceContainer.style.display = space.id === activeSpaceId ? 'block' : 'none';
@@ -677,7 +677,7 @@ async function setupDragAndDrop(pinnedContainer, tempContainer) {
 
 async function createNewFolder(spaceElement) {
     const pinnedContainer = spaceElement.querySelector('[data-tab-type="pinned"]');
-    const folderTemplate = document.getElementById('folderTemplate');
+    const folderTemplate = document.getElementById('folderTemplate')!;
     const newFolder = folderTemplate.content.cloneNode(true);
     const folderElement = newFolder.querySelector('.folder');
     const folderHeader = folderElement.querySelector('.folder-header');
@@ -743,7 +743,7 @@ async function loadTabs(space, pinnedContainer, tempContainer) {
                 for (const item of bookmarks) {
                     if (!item.url) {
                         // This is a folder
-                        const folderTemplate = document.getElementById('folderTemplate');
+                        const folderTemplate = document.getElementById('folderTemplate')!;
                         const newFolder = folderTemplate.content.cloneNode(true);
                         const folderElement = newFolder.querySelector('.folder');
                         const folderHeader = folderElement.querySelector('.folder-header');
@@ -1066,15 +1066,15 @@ function createNewTab(callback = () => {}) {
 }
 
 function showSpaceNameInput() {
-    const addSpaceBtn = document.getElementById('addSpaceBtn');
-    const addSpaceInputContainer = document.getElementById('addSpaceInputContainer');
+    const addSpaceBtn = document.getElementById('addSpaceBtn')!;
+    const addSpaceInputContainer = document.getElementById('addSpaceInputContainer')!;
 
     addSpaceBtn.classList.toggle('active');
     addSpaceInputContainer.classList.toggle('visible');
     const errorPopup = document.createElement('div');
     errorPopup.className = 'error-popup';
     errorPopup.textContent = 'A space with this name already exists';
-    const inputContainer = document.getElementById('addSpaceInputContainer');
+    const inputContainer = document.getElementById('addSpaceInputContainer')!;
     inputContainer.appendChild(errorPopup);
 
     // Remove the error message after 3 seconds
@@ -1085,8 +1085,8 @@ function showSpaceNameInput() {
 }
 
 // Add input validation for new space name
-document.getElementById('newSpaceName').addEventListener('input', (e) => {
-    const createSpaceBtn = document.getElementById('createSpaceBtn');
+document.getElementById('newSpaceName')!.addEventListener('input', (e) => {
+    const createSpaceBtn = document.getElementById('createSpaceBtn')!;
     createSpaceBtn.disabled = !e.target.value.trim();
 });
 
@@ -1486,7 +1486,7 @@ function activateSpaceInDOM(spaceId) {
     const space = spaces.find(s => s.id === spaceId);
     if (space) {
         // Update background color
-        const sidebarContainer = document.getElementById('sidebar-container');
+        const sidebarContainer = document.getElementById('sidebar-container')!;
         sidebarContainer.style.setProperty('--space-bg-color', `var(--chrome-${space.color}-color, rgba(255, 255, 255, 0.1))`);
     }
 
@@ -1506,8 +1506,8 @@ function setupDOMElements() {
 
     // Add event listeners for buttons
     addSpaceBtn.addEventListener('click', () => {
-        const inputContainer = document.getElementById('addSpaceInputContainer');
-        const spaceNameInput = document.getElementById('newSpaceName');
+        const inputContainer = document.getElementById('addSpaceInputContainer')!;
+        const spaceNameInput = document.getElementById('newSpaceName')!;
         const isInputVisible = inputContainer.classList.contains('visible');
 
         // Toggle visibility classes
@@ -1528,7 +1528,7 @@ function setupDOMElements() {
     // Add ESC key handler
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-            const inputContainer = document.getElementById('addSpaceInputContainer');
+            const inputContainer = document.getElementById('addSpaceInputContainer')!;
             if (inputContainer.classList.contains('visible')) {
                 closeSpaceCreation();
             }
@@ -1536,17 +1536,17 @@ function setupDOMElements() {
     });
 
     // Add close button handler
-    const closeSpaceBtn = document.getElementById('closeSpaceBtn');
+    const closeSpaceBtn = document.getElementById('closeSpaceBtn')!;
     closeSpaceBtn.addEventListener('click', closeSpaceCreation);
 
-    document.getElementById('createSpaceBtn').addEventListener('click', createSpace);
+    document.getElementById('createSpaceBtn')!.addEventListener('click', createSpace);
     newTabBtn.addEventListener('click', createNewTab);
 
-    const createSpaceColorSwatch = document.getElementById('createSpaceColorSwatch');
+    const createSpaceColorSwatch = document.getElementById('createSpaceColorSwatch')!;
     createSpaceColorSwatch.addEventListener('click', (e) => {
         if (e.target.classList.contains('color-swatch')) {
-            const colorPicker = document.getElementById('createSpaceColorSwatch');
-            const select = document.getElementById('spaceColor');
+            const colorPicker = document.getElementById('createSpaceColorSwatch')!;
+            const select = document.getElementById('spaceColor')!;
             const color = e.target.dataset.color;
             
             // Update selected swatch
@@ -1567,8 +1567,8 @@ function setupDOMElements() {
     // Initialize selected swatches
     document.querySelectorAll('.space-color-select').forEach(select => {
         const colorPicker = select.nextElementSibling;
-        const currentColor = select.value;
-        const swatch = colorPicker.querySelector(`[data-color="${currentColor}"]`);
+        const currentColor = (select as HTMLSelectElement).value;
+        const swatch = colorPicker?.querySelector(`[data-color="${currentColor}"]`);
         if (swatch) {
             swatch.classList.add('selected');
         }
@@ -1576,10 +1576,10 @@ function setupDOMElements() {
 }
 
 function closeSpaceCreation() {
-    const inputContainer = document.getElementById('addSpaceInputContainer');
-    const spaceNameInput = document.getElementById('newSpaceName');
-    const spaceSwitcher = document.getElementById('spaceSwitcher');
-    const addSpaceBtn = document.getElementById('addSpaceBtn');
+    const inputContainer = document.getElementById('addSpaceInputContainer')!;
+    const spaceNameInput = (document.getElementById('newSpaceName')! as HTMLInputElement);
+    const spaceSwitcher = document.getElementById('spaceSwitcher')!;
+    const addSpaceBtn = document.getElementById('addSpaceBtn')!;
 
     inputContainer.classList.remove('visible');
     addSpaceBtn.classList.remove('active');
@@ -1596,21 +1596,20 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             // The currently active tab is tabs[0]
             const currentTab = tabs[0];
             console.log("currentTab", currentTab);
-
             const spaceWithTempTab = spaces.find(space =>
-                space.temporaryTabs.includes(currentTab.id)
+                space.temporaryTabs.includes(currentTab.id!)
             );
             console.log("spaceWithTempTab", spaceWithTempTab);
             if (spaceWithTempTab) {
-                moveTabToSpace(currentTab.id, spaceWithTempTab.id, true);
+                moveTabToSpace(currentTab.id!, spaceWithTempTab.id, true);
                 moveTabToPinned(spaceWithTempTab, currentTab);
             } else {
                 const spaceWithBookmark = spaces.find(space =>
-                    space.spaceBookmarks.includes(currentTab.id)
+                    space.spaceBookmarks.includes(currentTab.id!)
                 );
                 console.log("spaceWithBookmark", spaceWithBookmark);
                 if (spaceWithBookmark) {
-                    moveTabToSpace(currentTab.id, spaceWithBookmark.id, false);
+                    moveTabToSpace(currentTab.id!, spaceWithBookmark.id, false);
                     moveTabToTemp(spaceWithBookmark, currentTab);
                 }
             }
@@ -1621,7 +1620,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 
 // Function to create space switcher button with emoji support
-function createSpaceSwitcherButton(spaceName, isActive = false) {
+function createSpaceSwitcherButton(spaceName: string, isActive = false) {
     const button = document.createElement('button');
     
     // Split emoji and text (assuming emoji is at the start if present)
