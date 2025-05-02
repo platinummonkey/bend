@@ -25,8 +25,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     }
     if (chrome.contextMenus) {
         chrome.contextMenus.create({
-            id: "openArcify",
-            title: "Arcify",
+            id: "openBend",
+            title: "Bend",
             contexts: ["all"]
         });
     }
@@ -36,11 +36,17 @@ chrome.runtime.onInstalled.addListener((details) => {
 if (chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener((info, tab) => {
         if (!tab?.windowId) return;
-        if (info.menuItemId === "openArcify") {
+        if (info.menuItemId === "openBend") {
             chrome.sidePanel.open({ windowId: tab.windowId });
         }
     });
-}
+};
+
+if (chrome.action) {
+    chrome.action.onClicked.addListener((tab) => {
+        chrome.sidePanel.open({ windowId: tab.windowId });
+    });
+};
 
 chrome.commands.onCommand.addListener(function(command) {
     if (command === "quickPinToggle") {
