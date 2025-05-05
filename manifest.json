@@ -13,17 +13,15 @@
     "favicon"
   ],
   "side_panel": {
-    "default_path": "dist/sidebar.html"
+    "default_path": "sidebar.html"
   },
-  "options_page": "dist/options.html",
   "background": {
-    "service_worker": "dist/background.js",
+    "service_worker": "background.js",
     "type": "module"
   },
   "web_accessible_resources": [{
     "resources": [
-      "dist/sidebar.js",
-      "dist/options.js",
+      "sidebar.js",
       "assets/*",
       "_favicon/*"
     ],
@@ -44,13 +42,6 @@
         "mac": "Command+K"
       },
       "description": "Toggle side panel"
-    },
-    "quickPinToggle": {
-      "suggested_key": {
-        "default": "Ctrl+D",
-        "mac": "Command+D"
-      },
-      "description": "Quick Pin/Unpin Tab"
     }
   }
 }
